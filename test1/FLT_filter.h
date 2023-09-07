@@ -3,6 +3,19 @@
 #include "fftw3.h"
 typedef unsigned long FILTER;
 
+#define FILTER_PI 3.1415926535897932384626433832795
+
+#define FLT_OK              0
+#define FLT_WRONG_PARAMETER 1
+#define FLT_UNKNOWN_ERROR   2
+#define FILTER_ERROR_N      3   // N value is wrong
+#define FILTER_ERROR_LENGTH 4   // Sgnal length value is wrong
+#define FILTER_ERROR_BAND   5   // One of frequency band is wrong
+#define FILTER_ERROR_FD     6   // Fd is wrong
+#define FILTER_ERROR_Window 7   // Window value is wrong
+
+#define FILTER_ERROR_PREV   100
+
 class FLT_Filter
 {
 public:
@@ -17,7 +30,7 @@ public:
     int min_N = 0;
     int min_N_left = 0;
 
-    double BP1 = 0, BP2 = 0, BP3 = 0, BP4 = 0;
+    double B1 = 0, B2 = 0, B3 = 0, B4 = 0;
 
     double* h;                      // Real: fft_size               Logical: fft_size
     fftw_complex* h_fft;            // Real: fft_size/2 + 1         Logical: fft_size/2 + 1
@@ -36,8 +49,6 @@ public:
 
     fftw_plan forward_signal_fft;   // œÎ‡Ì ¡œ‘
     fftw_plan backward_signalF;     // œÎ‡Ì Œ¡œ‘
-
-
 
     struct Frame
     {
@@ -60,17 +71,26 @@ public:
         int N = 0;
     };
 
+    int windowType = 1;
     Frame frame1, frame2;
 
+    int check_params(const char* filter, int N, int fd, int BP1, int BP2, int BS1, int BS2, int window);
+    void createIR(const char* filter);
+    void calc_h_fft_mag_ph_att();
+    double calc_magnitude(double real_value, double complex_value);
+    double calc_phase(double real_value, double complex_value);
 
+    // —‚∏ÚÍ‡
     int convolFull(Frame& frame1, Frame& frame2);
     void convolDifferent(Frame& frame1, Frame& frame2);
 
-    FILTER getId();
-    static FLT_Filter* getInstanse(FILTER filter);
+    FILTER get_id();
+    FLT_Filter& get_ref();
+    static FLT_Filter* get_pointer(FILTER id);
 private:
     FILTER descriptor = 0;
-    static FILTER nextDescriptor;
-    //using objectPtr = std::shared_ptr<FLT_Filter>;
-    static std::unordered_map<FILTER, FLT_Filter*> objects;
+    int errorCode = 0;
+    static FILTER next_descriptor;
+public:
+    static std::unordered_map<FILTER, FLT_Filter*> list;
 };

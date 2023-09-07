@@ -1,13 +1,18 @@
 #include "FLT_filter.h"
 
-FILTER FLT_Filter::nextDescriptor = 1;
-std::unordered_map<FILTER, FLT_Filter*> FLT_Filter::objects;
+FILTER FLT_Filter::next_descriptor = 1;
+std::unordered_map<FILTER, FLT_Filter*> FLT_Filter::list;
 
 FLT_Filter::FLT_Filter(FILTER& filter, int N, double fd) : N(N), fd(fd)
 {
-    descriptor = nextDescriptor;
-    nextDescriptor++;
-    objects[descriptor] = this;
+    if (list.empty()) {
+        descriptor = 0;
+        next_descriptor = 1;
+    }
+    descriptor = next_descriptor;
+    next_descriptor++;
+    list[descriptor] = this;
+    filter = rand() * fd * N;
 }
 
 FLT_Filter::~FLT_Filter()
@@ -15,17 +20,137 @@ FLT_Filter::~FLT_Filter()
 
 }
 
-FILTER FLT_Filter::getId() {
+FILTER FLT_Filter::get_id() {
     return descriptor;
 }
 
-FLT_Filter* FLT_Filter::getInstanse(FILTER filter) {
-    auto it = objects.find(filter);
-    if (it != objects.end()) {
+FLT_Filter& FLT_Filter::get_ref()
+{
+    return *this;
+}
+
+
+FLT_Filter* FLT_Filter::get_pointer(FILTER id)
+{
+    auto it = FLT_Filter::list.find(id);
+    if (it != FLT_Filter::list.end()) {
         FLT_Filter* ptr = it->second;
         return ptr;
     }
-    return nullptr;
+    else {
+        return nullptr;
+    }
+}
+
+int FLT_Filter::check_params(const char* filter, int N, int fd, int B1, int B2, int B3, int B4, int window)
+{
+    if (errorCode)
+        return FILTER_ERROR_PREV;
+    if ((N < 17) || ((N % 2) == 0))
+        return FILTER_ERROR_N;
+    if (fd <= 16)
+        return FILTER_ERROR_FD;
+    if ((window < 0) || (window > 3))
+        return FILTER_ERROR_Window;
+
+    //switch (type)
+    //{
+    //case 1: // Lowpass
+    //    if (real == 1)  // Realisation 1
+    //        if ((B1 >= fd / 2) || (B1 <= 0)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    if (real == 2)
+    //        if ((B1 <= 0) || (B1 >= B2) || (B2 >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    break;
+    //case 2:
+    //    if (real == 1)
+    //        if ((B1 >= fd / 2) || (B1 <= 0)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    if (real == 2)
+    //        if ((B2 <= 0) || (B2 >= B1) || (B1 >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    break;
+    //case 3:
+    //    if (real == 1)
+    //        if ((B1 <= 0) || (B1 >= B2) || (B2 >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    if (real == 2)
+    //        if ((BS1 <= 0) || (BS1 >= BP1) || (BP1 >= BP2) || (BP2 >= BS2) || (BS2 >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //        }
+    //    break;
+    //case 4:
+    //    if (real == 1)
+    //        if ((f_low <= 0) || (f_low >= f_high) || (f_high >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //            return 0;
+    //        }
+    //    if (real == 2)
+    //        if ((BP1 <= 0) || (BP1 >= BS1) || (BS1 >= BS2) || (BS2 >= BP2) || (BP1 >= fd / 2)) {
+    //            errorCode = FILTER_ERROR_BAND;
+    //            return 0;
+    //        }
+    //default:
+    //    break;
+    //}
+    return 0;
+}
+
+void FLT_Filter::createIR(const char* filter)
+{
+    if (filter == "LowpassR1B1") {
+        for (int i = 0; i < fft_size; i++)
+            if (i < (N - 1) / 2) {
+                h[i] = sin(2 * FILTER_PI * B1 / fd * (i - (N - 1) / 2)) / (FILTER_PI * (i - (N - 1) / 2));
+                h[N - 1 - i] = h[i];
+            }
+            else
+                if (i >= N)
+                    h[i] = 0;
+        h[(N - 1) / 2] = 2 * (B1 / fd); // central
+
+        // if window
+        if (windowType)
+            for (int i = 0; i < N; i++)
+                h[i] = h[i] * w[i];
+
+        calc_h_fft_mag_ph_att();
+    }
+}
+
+void FLT_Filter::calc_h_fft_mag_ph_att()
+{
+    fftw_plan forward_h = fftw_plan_dft_r2c_1d(fft_size, h, h_fft, FFTW_ESTIMATE);
+    fftw_execute(forward_h);
+
+    for (int i = 0; i < fft_size / 2 + 1; i++) { // Pulse response magnitude, phase, attenuation calculation
+        double magnitude = calc_magnitude(h_fft[i][0], h_fft[i][1]);
+        double phase = calc_phase(h_fft[i][0], h_fft[i][1]);
+        double attenuation = 20 * log10(1 / magnitude);
+
+        h_magnitude[i] = magnitude;
+
+        h_phase[i] = phase;
+        h_attenuation[i] = attenuation;
+    };
+
+    fftw_destroy_plan(forward_h);
+}
+
+double FLT_Filter::calc_magnitude(double real_value, double complex_value)
+{
+    return sqrt(pow(real_value, 2) + pow(complex_value, 2));
+}
+
+double FLT_Filter::calc_phase(double real_value, double complex_value)
+{
+    return atan2(complex_value, real_value);
 }
 
 int FLT_Filter::convolFull(Frame& frame1, Frame& frame2)
