@@ -14,6 +14,9 @@ typedef unsigned long FILTER;
 #define FILTER_ERROR_FD     6   // Fd is wrong
 #define FILTER_ERROR_Window 7   // Window value is wrong
 
+#define FLT_WINDOW_NO 0
+#define FLT_WINDOW_HAMMING 1
+
 #define FILTER_ERROR_PREV   100
 
 class FLT_Filter
@@ -75,7 +78,9 @@ public:
     Frame frame1, frame2;
 
     int check_params(const char* filter, int N, int fd, int BP1, int BP2, int BS1, int BS2, int window);
-    void createIR(const char* filter);
+    
+    void createIRLowpassR1B1(const char* filter, double BP, double BS, int window);
+    
     void calc_h_fft_mag_ph_att();
     double calc_magnitude(double real_value, double complex_value);
     double calc_phase(double real_value, double complex_value);

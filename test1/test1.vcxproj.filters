@@ -24,12 +24,18 @@
     <ClCompile Include="FLT_filter.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="FLT_ImpulseResponse.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Test.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="FLT_filter.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="FLT_ImpulseResponse.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

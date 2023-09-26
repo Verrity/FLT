@@ -102,26 +102,21 @@ int FLT_Filter::check_params(const char* filter, int N, int fd, int B1, int B2, 
     return 0;
 }
 
-void FLT_Filter::createIR(const char* filter)
-{
-    if (filter == "LowpassR1B1") {
-        for (int i = 0; i < fft_size; i++)
-            if (i < (N - 1) / 2) {
-                h[i] = sin(2 * FILTER_PI * B1 / fd * (i - (N - 1) / 2)) / (FILTER_PI * (i - (N - 1) / 2));
-                h[N - 1 - i] = h[i];
-            }
-            else
-                if (i >= N)
-                    h[i] = 0;
-        h[(N - 1) / 2] = 2 * (B1 / fd); // central
+void FLT_Filter::createIRLowpassR1B1(const char* filter, double BP, double BS, int window) {
+    for (int i = 0; i < fft_size; i++)
+        if (i < (N - 1) / 2) {
+            h[i] = sin(2 * FILTER_PI * B1 / fd * (i - (N - 1) / 2)) / (FILTER_PI * (i - (N - 1) / 2));
+            h[N - 1 - i] = h[i];
+        }
+        else
+            if (i >= N)
+                h[i] = 0;
+    h[(N - 1) / 2] = 2 * (B1 / fd); // central
 
-        // if window
-        if (windowType)
-            for (int i = 0; i < N; i++)
-                h[i] = h[i] * w[i];
-
-        calc_h_fft_mag_ph_att();
-    }
+    // if window
+    if (windowType)
+        for (int i = 0; i < N; i++)
+            h[i] = h[i] * w[i];
 }
 
 void FLT_Filter::calc_h_fft_mag_ph_att()

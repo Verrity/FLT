@@ -66,6 +66,7 @@
 //}
 
 //=======================================================================================================
+
 int FLT_CreateLowpassR1B1File(FILTER &filter, int N, double fd, double BP, double BS, int window) {
     /*
         Check parameters
@@ -78,6 +79,8 @@ int FLT_CreateLowpassR1B1File(FILTER &filter, int N, double fd, double BP, doubl
 #ifdef DEBUG_OBJ
     std::cout << "[OBJ ACTION] id(" << pFilter->get_id() << ") address(" << pFilter << ") " << "Created" << std::endl;
 #endif
+
+    
     return FLT_OK;
 }
 
