@@ -1,6 +1,7 @@
 #include <iostream>
 #include "FLT_filter.h"
 #include "Test.h"
+#include "FLT_ImpulseResponse.h"
 
 #define DEBUG_OBJ
 
@@ -67,6 +68,23 @@
 
 //=======================================================================================================
 
+int FLT_CreateCustomIRFile(int N, double fd, double B1, double accurancy, double fft_size, int window, double* h,
+    void(*pIRFunction)	(int N, double fd, double B1, double accurancy, int window, double* h)) 
+{
+    FLT_ImpulseResponse* pIR = new FLT_ImpulseResponse();
+    // CHECK -------------
+    pIR->setIRFunctionFile(N, fd, B1, accurancy, fft_size, window, h, pIRFunction);
+    IR ir;
+    ir = pIR->get_id();
+#ifdef DEBUG_OBJ
+    std::cout << "[OBJ ACTION] id(" << ir << ") address(" << pIR << ") " << "Created" << std::endl;
+#endif
+
+    return 0; // ERROR CODE
+}
+
+//=======================================================================================================
+
 int FLT_CreateLowpassR1B1File(FILTER &filter, int N, double fd, double BP, double BS, int window) {
     /*
         Check parameters
@@ -104,6 +122,7 @@ int FLT_Free(FILTER filter) {
 }
 
 void FLT_Free() {
+    // FILTER
     for (const auto& pair : FLT_Filter::list) {
         FILTER descriptor = pair.first;
         FLT_Filter* pFilter = pair.second;
@@ -116,6 +135,20 @@ void FLT_Free() {
         }
     }
     FLT_Filter::list.clear();
+
+    // IMPULSERESPONSE
+    for (const auto& pair2 : FLT_ImpulseResponse::list) {
+        IR descriptor = pair2.first;
+        FLT_ImpulseResponse* pIR = pair2.second;
+        if (pIR != nullptr) {
+#ifdef DEBUG_OBJ
+            FLT_ImpulseResponse& ref = *pIR;
+            std::cout << "[OBJ ACTION] id(" << descriptor << ") address(" << &ref << ") " << "Destroyed" << std::endl;
+#endif
+            delete pair2.second;
+        }
+    }
+    FLT_ImpulseResponse::list.clear();
 }
 
 int main() {

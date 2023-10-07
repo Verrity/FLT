@@ -1,4 +1,5 @@
 #include "FLT_filter.h"
+#include <time.h>
 
 FILTER FLT_Filter::next_descriptor = 1;
 std::unordered_map<FILTER, FLT_Filter*> FLT_Filter::list;
@@ -12,7 +13,8 @@ FLT_Filter::FLT_Filter(FILTER& filter, int N, double fd) : N(N), fd(fd)
     descriptor = next_descriptor;
     next_descriptor++;
     list[descriptor] = this;
-    filter = rand() * fd * N;
+    srand(time(0));
+    filter = rand();
 }
 
 FLT_Filter::~FLT_Filter()

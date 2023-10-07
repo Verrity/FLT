@@ -145,12 +145,14 @@
   <ItemGroup>
     <ClCompile Include="FLT_filter.cpp" />
     <ClCompile Include="FLT_ImpulseResponse.cpp" />
+    <ClCompile Include="FLT_ObjManager.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FLT_filter.h" />
     <ClInclude Include="FLT_ImpulseResponse.h" />
+    <ClInclude Include="FLT_ObjManager.h" />
     <ClInclude Include="Test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
