@@ -18,6 +18,16 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="fftw3.h" />
+    <ClInclude Include="FLT_BaseFilter.h" />
+    <ClInclude Include="FLT_FilterFile.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FLT_BaseFilter.cpp" />
+    <ClCompile Include="FLT_FilterFile.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -142,19 +152,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="FLT_filter.cpp" />
-    <ClCompile Include="FLT_ImpulseResponse.cpp" />
-    <ClCompile Include="FLT_ObjManager.cpp" />
-    <ClCompile Include="Source.cpp" />
-    <ClCompile Include="Test.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="FLT_filter.h" />
-    <ClInclude Include="FLT_ImpulseResponse.h" />
-    <ClInclude Include="FLT_ObjManager.h" />
-    <ClInclude Include="Test.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
