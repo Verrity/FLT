@@ -64,6 +64,8 @@ protected:
 
     fftw_plan forward_signal_fft;   // œÎ‡Ì ¡œ‘
     fftw_plan backward_signalF;     // œÎ‡Ì Œ¡œ‘
+    double* pFrameData = nullptr;
+    fftw_complex* = 
 
     Frame frame1, frame2;
 

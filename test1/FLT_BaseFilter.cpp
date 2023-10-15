@@ -112,7 +112,7 @@ void FLT_BaseFilter::Frame::setData(double* arr, int begin, int size)
         if (data != nullptr) {
             delete[] data;
         }
-        data = new double[size];
+        data = new double[fft_size];
         this->data_size = size;
     }
 

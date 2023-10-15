@@ -1,4 +1,5 @@
 #include "FLT_FilterFile.h"
+#include <iostream>
 
 FLT_FilterFile::FLT_FilterFile()
 {
@@ -8,14 +9,24 @@ FLT_FilterFile::~FLT_FilterFile()
 {
 }
 
-int FLT_FilterFile::filtrate(double* in, int length, double* out, bool tails) {
+int FLT_FilterFile::filtrate(double* in, int length, double* &out, bool tails) {
     if (length <= 0) {
         error_code = FILTER_ERROR_LENGTH;
         return 0;
     }
+    
     frame1.setData(in, 0, length);
     fft_filtrate(frame1);
 
+    std::cout << "frame1.add " << frame1.add << std::endl;
+    std::cout << "frame1.add_min " << frame1.add_min << std::endl;
+    std::cout << "frame1.add_min_left " << frame1.add_min_left << std::endl;
+    std::cout << "frame1.add_other " << frame1.add_other << std::endl;
+    std::cout << "frame1.add_other_left " << frame1.add_other_left << std::endl;
+    std::cout << "frame1.add_other_right " << frame1.add_other_right << std::endl;
+    std::cout << "frame1.data_size " << frame1.data_size << std::endl;
+    std::cout << "fft_size " << fft_size << std::endl;
+    
     int len = 0;
     if (tails) {
         len = length + add_min;
@@ -23,6 +34,7 @@ int FLT_FilterFile::filtrate(double* in, int length, double* out, bool tails) {
         for (int i = 0; i < len; i++)
         {
             out[i] = frame1.data[frame1.add_other_left + i];
+            //printf("%f", frame1.data[frame1.add_other_left + i])
         }
     }
     else {
@@ -36,11 +48,13 @@ int FLT_FilterFile::filtrate(double* in, int length, double* out, bool tails) {
     return len;
 }
 
-int FLT_FilterFile::filtrateBlock(double* in, int length, double* out, bool tails) {
+int FLT_FilterFile::filtrateBlock(double* in, int length, double* &out, bool tails) {
     if (length <= 0) {
         error_code = FILTER_ERROR_LENGTH;
         return 0;
     }
+
+
 
     // ≈сли сигнал меньше стандартной выборки
     if (length < fft_size) {
@@ -53,6 +67,8 @@ int FLT_FilterFile::filtrateBlock(double* in, int length, double* out, bool tail
 }
 
 bool FLT_FilterFile::fft_filtrate(Frame& frame) {
+    pFrameData = frame.data;
+    pFrameDataFFT = frame.data_fft;
     fftw_execute_dft_r2c(forward_signal_fft, frame.data, frame.data_fft);
 
     for (int i = 0; i < fft_size / 2 + 1; i++) {
@@ -96,6 +112,12 @@ bool FLT_FilterFile::local_init(int N, double fd, int accurancy, int window) {
     h_attenuation = new double[fft_size / 2 + 1];
     freq_match = new double[fft_size];
 
+    frame1.init(N, sample_size, fft_size);
+    frame2.init(N, sample_size, fft_size);
+
+    forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
+    backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
+
     h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
     mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
 
@@ -113,8 +135,6 @@ bool FLT_FilterFile::local_init(int N, double fd, int accurancy, int window) {
         freq_match[i] = double(i) / fft_size * fd;
     }
 
-    frame1.init(N, sample_size, fft_size);
-    frame2.init(N, sample_size, fft_size);
     return 0;
 }
 
