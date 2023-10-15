@@ -60,7 +60,7 @@ void writeToFile(int number, fftw_complex* arr, int length) {
 
 int main() {
 
-	int N = 257;
+	int N = 513;
 	double fd = 44100;
 	int accurancy = 1;
 	int window = 1;
@@ -71,46 +71,46 @@ int main() {
 
 	double* signal_in = generate_pulse(length_in, baseFreq, fd, harmonicsCount);
 
-	double B1 = 1'000;
+	double B1 = 500;
 
 	FLT_FilterFile filter_file;
-	if (!filter_file.setIrLowpassR1B1(N, fd, accurancy, B1, window)) {
+	if (!filter_file.setIrLowpassR1B1(N, fd, B1, window)) {
 		printf("Error in set type: %d", filter_file.get_error_code());
 		exit(-1);
 	}
-	
+
+	int ft_size = 0;
+
+	//double* h = nullptr;
+	//filter_file.get_h(h);
+	//writeToFile(1, h, N);
+
+	//double* ph = nullptr;
+	//ft_size = filter_file.get_h_phase(ph, 0);
+	//writeToFile(2, ph, ft_size);
+
+	//double* mag = nullptr;
+	//ft_size = filter_file.get_h_magnitude(mag, 0);
+	//writeToFile(3, mag, ft_size);
+
+	//double* att = nullptr;
+	//ft_size = filter_file.get_h_attenuation(att, 0);
+	//writeToFile(4, att, ft_size);
+
+	//delete[] h;
+	//delete[] ph;
+	//delete[] mag;
+	//delete[] att;
+
+	double* signal_out = nullptr;
+	int length_out = filter_file.filtrate(signal_in, length_in, signal_out, accurancy, 0);
+
 	printf("N           | %d\n", filter_file.get_N());
 	printf("accurancy   | %d\n", accurancy);
 	printf("sample_size | %d\n", filter_file.get_sample_size());
 	printf("fft_size:   | %d\n", filter_file.get_fft_size());
-	printf("fd          | %-10.3f kHz\n", fd/1000);
+	printf("fd          | %-10.3f kHz\n", fd / 1000);
 	printf("Window      | %d\n", filter_file.get_window());
-
-	int ft_size = 0;
-
-	double* h = nullptr;
-	filter_file.get_h(h);
-	writeToFile(1, h, N);
-
-	double* ph = nullptr;
-	ft_size = filter_file.get_h_phase(ph, 0);
-	writeToFile(2, ph, ft_size);
-
-	double* mag = nullptr;
-	ft_size = filter_file.get_h_magnitude(mag, 0);
-	writeToFile(3, mag, ft_size);
-
-	double* att = nullptr;
-	ft_size = filter_file.get_h_attenuation(att, 0);
-	writeToFile(4, att, ft_size);
-
-	delete[] h;
-	delete[] ph;
-	delete[] mag;
-	delete[] att;
-
-	double* signal_out = nullptr;
-	int length_out = filter_file.filtrate(signal_in, length_in, signal_out, 1);
 
 	printf("\n\n");
 	printf("Signal IN\n");
@@ -121,7 +121,7 @@ int main() {
 
 	printf("\n");
 	printf("Signal OUT\n");
-	printf("\tLength          | %d\n", length_in);
+	printf("\tLength          | %d\n", length_out);
 
 	writeToFile(5, signal_in, length_in);
 	writeToFile(6, signal_out, length_out);

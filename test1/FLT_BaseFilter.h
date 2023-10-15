@@ -43,6 +43,10 @@ protected:
     };
 
 protected:
+    int type = 0;
+    int method = 0;
+    int bands_count = 0;
+
     int N = 0;
     double fd = 0;
     int fft_size = 0;
@@ -65,33 +69,40 @@ protected:
     fftw_plan forward_signal_fft;   // œÎ‡Ì ¡œ‘
     fftw_plan backward_signalF;     // œÎ‡Ì Œ¡œ‘
     double* pFrameData = nullptr;
-    fftw_complex* = 
+    fftw_complex* pFrameDataFFT = nullptr;
 
     Frame frame1, frame2;
 
     // ---------------- CHECKER
-    // ------- PARAMETERS
+    // --- PARAMETERS
     bool check_N(int N);
     bool check_fd(double fd);
     bool check_accurancy(int accurancy);
     bool check_window(int window);
-    // ------- BANDS
+    // --- BANDS
     bool check_band_LowpassR1B1(double band, double fd);
 
     bool convolFull(Frame& frame1, Frame& frame2);
     void convolDifferent(Frame& frame1, Frame& frame2);
 
     // ---------------- CALCULATION
-    // ------- IR
+    // --- IR
     int calc_IrLowpassR1B1();
-
-    // ------- SUB
+    // --- SUB
+    void calc_h();
+    void calc_h_fft();
     void calc_h_fft_mag_ph_att();
     void calc_window();
     double calc_magnitude(double& real_value, double& complex_value);
     double calc_phase(double& real_value, double& complex_value);
+    //bool init(int N, double fd, int accurancy, int window);
+    bool fft_filtrate(Frame& frame);
 
 public:
+    int filtrate(double* in, int length, double*& out, int accurancy, bool tails);
+    // ---------------- IMPULSE RESPONSE
+    bool setIrLowpassR1B1(int N, double fd, double band, int window);
+
     // ---------------- GET
     int get_fft_size();
     int get_N();
