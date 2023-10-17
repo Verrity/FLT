@@ -60,12 +60,12 @@ void writeToFile(int number, fftw_complex* arr, int length) {
 
 int main() {
 
-	int N = 513;
+	int N = 257;
 	double fd = 44100;
 	int accurancy = 1;
 	int window = 1;
 	
-	int length_in = 5000;
+	int length_in = 5'000;
 	int baseFreq = 30;
 	int harmonicsCount = 15;
 
@@ -73,6 +73,11 @@ int main() {
 
 	double B1 = 500;
 
+	//FLT_BaseFilter filter_base;
+	//if (!filter_base.setIrLowpassR1B1(N, fd, B1, window)) {
+	//	printf("Error in set type: %d", filter_base.get_error_code());
+	//	exit(-1);
+	//}
 	FLT_FilterFile filter_file;
 	if (!filter_file.setIrLowpassR1B1(N, fd, B1, window)) {
 		printf("Error in set type: %d", filter_file.get_error_code());
@@ -101,9 +106,11 @@ int main() {
 	//delete[] ph;
 	//delete[] mag;
 	//delete[] att;
-
+	int length_out = 0;
 	double* signal_out = nullptr;
-	int length_out = filter_file.filtrate(signal_in, length_in, signal_out, accurancy, 0);
+	//length_out = filter_base.filtrate(signal_in, length_in, signal_out, accurancy, 0);
+	//length_out = filter_file.filtrate(signal_in, length_in, signal_out, accurancy, 0);
+	//length_out = filter_file.filtrateBlock(signal_in, length_in, signal_out, accurancy, 0);
 
 	printf("N           | %d\n", filter_file.get_N());
 	printf("accurancy   | %d\n", accurancy);

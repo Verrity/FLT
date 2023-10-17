@@ -4,7 +4,7 @@
 class FLT_FilterFile : public FLT_BaseFilter {
 protected:
     int sample_size = 0;
-    int length = 0;
+    //int length = 0;
 public:
     FLT_FilterFile();
     ~FLT_FilterFile();
@@ -14,11 +14,13 @@ public:
     
     //int filtrate(double* in, int length, double* out, bool tails);
     // Returns output array size
-    int filtrateBlock(double* in, int length, double* &out, bool tails);
+    int filtrateBlock(double* in, int length, double* &out, int accurancy, bool tails);
 
     // ---------------- GET
     int get_sample_size();
 private:
+    int filtrateBlock_length = 0;
+    int filtrateBlock_accurancy = 0;
     //bool local_init(int N, double fd, int accurancy, int window);
     //bool fft_filtrate(Frame& frame);
 };

@@ -42,7 +42,6 @@ protected:
         int N = 0;
     };
 
-protected:
     int type = 0;
     int method = 0;
     int bands_count = 0;
@@ -55,6 +54,7 @@ protected:
     int error_code = FILTER_ERROR_OK;
     std::vector<double> bands;
     int window = 0;
+    int conv_size = 0;
 
     double* h = nullptr;                    // Real: fft_size                   Logical: fft_size
     fftw_complex* h_fft = nullptr;          // Real: fft_size/2 + 1             Logical: fft_size/2 + 1
@@ -97,6 +97,9 @@ protected:
     double calc_phase(double& real_value, double& complex_value);
     //bool init(int N, double fd, int accurancy, int window);
     bool fft_filtrate(Frame& frame);
+private:
+    int filtrate_length = 0;
+    int filtrate_accurancy = 0;
 
 public:
     int filtrate(double* in, int length, double*& out, int accurancy, bool tails);

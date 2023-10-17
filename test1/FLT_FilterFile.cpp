@@ -48,121 +48,156 @@ FLT_FilterFile::~FLT_FilterFile()
 //    return len;
 //}
 
-int FLT_FilterFile::filtrateBlock(double* in, int length, double* &out, bool tails) {
+int FLT_FilterFile::filtrateBlock(double* in, int length, double* &out, int accurancy, bool tails) {
+    // Check Parameters ---------------------------------------------
     if (length <= 0) {
         error_code = FILTER_ERROR_LENGTH;
         return 0;
     }
+    if (!check_accurancy(accurancy))
+        return 0;
+    // --------------------------------------------------------------
+    sample_size = N * 45;
+   
+    // Calc Parameters ----------------------------------------------
+    if ( // Если массивы под эти параметры не были рассчитаны рассчитать новые
+        (filtrateBlock_length != length) ||
+        (filtrateBlock_accurancy != accurancy)
+        )
+    {
+        filtrateBlock_length = length;
+        filtrateBlock_accurancy = accurancy;
 
+        this->accurancy = accurancy;
+        add_min = N - 1;
 
+        fft_size = 1;
+        while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
+        {
+            fft_size = fft_size << 1;
+        }
+        fft_size << accurancy;
+
+        conv_size = sample_size * 2 + add_min;
+
+        if (h != nullptr)               delete[] h;
+        if (freq_match != nullptr)      delete[] freq_match;
+        if (h_fft != nullptr)           fftw_free(h_fft);
+        if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
+        if (conv_frames != nullptr)     delete[] conv_frames;
+        fftw_destroy_plan(forward_signal_fft);
+        fftw_destroy_plan(backward_signalF);
+
+        h = new double[fft_size];
+        conv_frames = new double[conv_size];
+        h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+        mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
+        freq_match = new double[fft_size];
+
+        frame1.init(N, sample_size, fft_size);
+        frame2.init(N, sample_size, fft_size);
+
+        forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
+        backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
+
+        if (window) {
+            if (w != nullptr)   delete[] w;
+            w = new double[fft_size];
+            calc_window();
+        }
+        calc_h();
+        calc_h_fft();
+    }
+    // --------------------------------------------------------------
+
+    int frames_count = length % sample_size != 0 ? floor(double(length) / sample_size) + 1 : floor(double(length) / sample_size);
+    int len = 0;
 
     // Если сигнал меньше стандартной выборки
-    if (length < fft_size) {
-        sample_size = length;
+    if ((length + add_min) < fft_size) {
+        return filtrate(in, length, out, accurancy, tails);
     }
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Обработать
+    else {
+        int prev_begin = -sample_size;
+        int curr_begin = 0;
+        
+        if (tails) {
+            len = length + add_min;
+        }
+        else {
+            len = length;
+        }
+        out = new double[len];
 
-    if (conv_frames != nullptr)     delete[] conv_frames;
-    conv_frames = new double[sample_size * 2 + frame1.add];
+        for (int i = 1; i < frames_count; i++) {
+            prev_begin = prev_begin + sample_size;
+            curr_begin = curr_begin + sample_size;
+
+            // Загрузить, обработать первый кадр
+            if (i == 1) {
+                frame1.setData(in, prev_begin, sample_size);
+                fft_filtrate(frame1);
+            }
+            else {   // Если кадр не первый
+                // M_real+L+1 = length(conv_frames) = fft_size
+                for (int i = 0; i < fft_size; i++)
+                    frame1.data[i] = conv_frames[sample_size + i];
+            }
+
+            // Обработать текущий кадр (CURRENT_FRAME)
+            if (i == frames_count - 1) {// Если он последний
+                int res = length - curr_begin;
+                frame2.setData(in, curr_begin, res);
+            }
+            else {                      // Если он не последний
+                frame2.setData(in, curr_begin, sample_size);
+            }
+
+            fft_filtrate(frame2);
+            // Соеденить два кадра по алгоритму в массив conv_frames
+            convolFull(frame1, frame2);
+
+            // Записать в выходной массив
+            if (i == 1) {
+                if (tails) {
+                    for (int i = 0; i < sample_size; i++) {
+                        out[prev_begin + i] = conv_frames[i];
+                    }
+                }
+                else {
+                    for (int i = 0; i < sample_size - add_min; i++) {
+                        out[prev_begin + i] = conv_frames[add_min + i];
+                    }
+                }
+            }
+            else {
+                for (int i = 0; i < sample_size; i++) {
+                    out[prev_begin + i] = conv_frames[i];
+                }
+            }
+
+            // Записать последний кадр в выходной массив
+            if (i == frames_count - 1) {
+                int res = 0;
+                if (tails) {
+                    // сколько элементов требуется записать
+                    res = length - curr_begin;
+                    for (int i = 0; i < res + add_min; i++) {
+                        out[curr_begin + i] = conv_frames[sample_size + i];
+                    }
+                }
+                else {
+                    res = length - curr_begin;
+                    for (int i = 0; i < res; i++) {
+                        out[curr_begin + i] = conv_frames[sample_size + i];
+                    }
+                }
+            }
+        }
+    }
+
+    return len;
 }
-
-//bool FLT_FilterFile::fft_filtrate(Frame& frame) {
-//    pFrameData = frame.data;
-//    pFrameDataFFT = frame.data_fft;
-//    fftw_execute_dft_r2c(forward_signal_fft, frame.data, frame.data_fft);
-//
-//    for (int i = 0; i < fft_size / 2 + 1; i++) {
-//        double& a = frame.data_fft[i][0];
-//        double& b = frame.data_fft[i][1];
-//        double& c = h_fft[i][0];
-//        double& d = h_fft[i][1];
-//
-//        mul_frames_fft[i][0] = ((a * c) - (b * d)) / (fft_size);
-//        mul_frames_fft[i][1] = ((a * d) + (b * c)) / (fft_size);
-//    }
-//
-//    fftw_execute_dft_c2r(backward_signalF, mul_frames_fft, frame.data);
-//    return false;
-//}
-
-//bool FLT_FilterFile::local_init(int N, double fd, int accurancy, int window) {
-//    // ---------------- data_size & fft_size SET 
-//    sample_size = N * 45;
-//    fft_size = 1;
-//    while (fft_size < sample_size)
-//    {
-//        fft_size = fft_size << 1;
-//    }
-//    fft_size *= accurancy;
-//    add_min = N - 1;
-//
-//    // ---------------- Array size set
-//    if (h != nullptr)               delete[] h;
-//    if (h_magnitude != nullptr)     delete[] h_magnitude;
-//    if (h_phase != nullptr)         delete[] h_phase;
-//    if (h_attenuation != nullptr)   delete[] h_attenuation;
-//    if (freq_match != nullptr)      delete[] freq_match;
-//
-//    if (h_fft != nullptr)           fftw_free(h_fft);
-//    if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
-//
-//    h = new double[fft_size];
-//    h_magnitude = new double[fft_size / 2 + 1];
-//    h_phase = new double[fft_size / 2 + 1];
-//    h_attenuation = new double[fft_size / 2 + 1];
-//    freq_match = new double[fft_size];
-//
-//    frame1.init(N, sample_size, fft_size);
-//    frame2.init(N, sample_size, fft_size);
-//
-//    forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
-//    backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
-//
-//    h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
-//    mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
-//
-//    // Расчет окна
-//    if (window) {
-//        if (w != nullptr)   delete[] w;
-//        w = new double[fft_size];
-//        calc_window();
-//    }
-//
-//    // ---------------- Array Calc
-//
-//    // Расчет массива соответствующих частот
-//    for (int i = 0; i < fft_size; i++) {
-//        freq_match[i] = double(i) / fft_size * fd;
-//    }
-//
-//    return 0;
-//}
-
-//bool FLT_FilterFile::setIrLowpassR1B1(int N, double fd, int accurancy, double band, int window) {
-//    // ---------------- Check parameters 
-//    if (
-//        !check_N(N) ||
-//        !check_fd(fd) ||
-//        !check_accurancy(accurancy) ||
-//        !check_window(window) ||
-//        !check_band_LowpassR1B1(band, fd)
-//        )
-//        return 0;
-//    this->N = N;
-//    this->fd = fd;
-//    this->accurancy = accurancy;
-//    this->window = window;
-//    bands.resize(1);
-//    bands.at(0) = band;
-//
-//    // ---------------- sample_size & fft_size SET 
-//    local_init(N, fd, accurancy, window);
-//
-//    calc_IrLowpassR1B1();
-//    calc_h_fft_mag_ph_att();
-//
-//    return 1;
-//}
 
 int FLT_FilterFile::get_sample_size()
 {

@@ -116,7 +116,14 @@ int FLT_BaseFilter::filtrate(double* in, int length, double*& out, int accurancy
     // --------------------------------------------------------------
 
     // Calc Parameters ----------------------------------------------
-    if (this->accurancy != accurancy) { // Если параметры под это accurancy не были рассчитаны рассчитать новые
+    if ( // Если массивы под эти параметры не были рассчитаны рассчитать новые
+        (filtrate_length != length) ||
+        (filtrate_accurancy != accurancy)
+        ) 
+    { 
+        filtrate_length = length;
+        filtrate_accurancy = accurancy;
+
         this->accurancy = accurancy;
         add_min = N - 1;
         fft_size = 1;
@@ -124,7 +131,7 @@ int FLT_BaseFilter::filtrate(double* in, int length, double*& out, int accurancy
         {
             fft_size = fft_size << 1;
         }
-        fft_size *= accurancy;
+        fft_size << accurancy;
 
         if (h != nullptr)               delete[] h;
         if (freq_match != nullptr)      delete[] freq_match;
