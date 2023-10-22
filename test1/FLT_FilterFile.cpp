@@ -7,6 +7,13 @@ FLT_FilterFile::FLT_FilterFile()
 
 FLT_FilterFile::~FLT_FilterFile()
 {
+    if (h != nullptr)               delete[] h;
+    if (freq_match != nullptr)      delete[] freq_match;
+    if (h_fft != nullptr)           fftw_free(h_fft);
+    if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
+    if (conv_frames != nullptr)     delete[] conv_frames;
+    fftw_destroy_plan(forward_signal_fft);
+    fftw_destroy_plan(backward_signalF);
 }
 
 //int FLT_FilterFile::filtrate(double* in, int length, double* &out, bool tails) {
@@ -58,66 +65,66 @@ int FLT_FilterFile::filtrateBlock(double* in, int length, double* &out, int accu
         return 0;
     // --------------------------------------------------------------
     sample_size = N * 45;
-   
-    // Calc Parameters ----------------------------------------------
-    if ( // ≈сли массивы под эти параметры не были рассчитаны рассчитать новые
-        (filtrateBlock_length != length) ||
-        (filtrateBlock_accurancy != accurancy)
-        )
+    fft_size = 1;
+    while (fft_size < (sample_size + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
     {
-        filtrateBlock_length = length;
-        filtrateBlock_accurancy = accurancy;
-
-        this->accurancy = accurancy;
-        add_min = N - 1;
-
-        fft_size = 1;
-        while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
-        {
-            fft_size = fft_size << 1;
-        }
-        fft_size << accurancy;
-
-        conv_size = sample_size * 2 + add_min;
-
-        if (h != nullptr)               delete[] h;
-        if (freq_match != nullptr)      delete[] freq_match;
-        if (h_fft != nullptr)           fftw_free(h_fft);
-        if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
-        if (conv_frames != nullptr)     delete[] conv_frames;
-        fftw_destroy_plan(forward_signal_fft);
-        fftw_destroy_plan(backward_signalF);
-
-        h = new double[fft_size];
-        conv_frames = new double[conv_size];
-        h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
-        mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
-        freq_match = new double[fft_size];
-
-        frame1.init(N, sample_size, fft_size);
-        frame2.init(N, sample_size, fft_size);
-
-        forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
-        backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
-
-        if (window) {
-            if (w != nullptr)   delete[] w;
-            w = new double[fft_size];
-            calc_window();
-        }
-        calc_h();
-        calc_h_fft();
+        fft_size = fft_size << 1;
     }
-    // --------------------------------------------------------------
-
-    int frames_count = length % sample_size != 0 ? floor(double(length) / sample_size) + 1 : floor(double(length) / sample_size);
+    fft_size << accurancy - 1;
     int len = 0;
+    sample_size = fft_size - N + 1;
 
     // ≈сли сигнал меньше стандартной выборки
     if ((length + add_min) < fft_size) {
         return filtrate(in, length, out, accurancy, tails);
     }
     else {
+        // Calc Parameters ----------------------------------------------
+        if ( // ≈сли массивы под эти параметры не были рассчитаны рассчитать новые
+            (filtrateBlock_length != length) ||
+            (filtrateBlock_accurancy != accurancy)
+            )
+        {
+            filtrateBlock_length = length;
+            filtrateBlock_accurancy = accurancy;
+
+            this->accurancy = accurancy;
+            add_min = N - 1;
+
+            conv_size = sample_size * 2 + add_min;
+
+            if (h != nullptr)               delete[] h;
+            if (freq_match != nullptr)      delete[] freq_match;
+            if (h_fft != nullptr)           fftw_free(h_fft);
+            if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
+            if (conv_frames != nullptr)     delete[] conv_frames;
+            fftw_destroy_plan(forward_signal_fft);
+            fftw_destroy_plan(backward_signalF);
+
+            h = new double[fft_size];
+            conv_frames = new double[conv_size];
+            h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+            mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
+            freq_match = new double[fft_size];
+
+            frame1.init(N, sample_size, fft_size);
+            frame2.init(N, sample_size, fft_size);
+
+            forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
+            backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
+
+            if (window) {
+                if (w != nullptr)   delete[] w;
+                w = new double[fft_size];
+                calc_window();
+            }
+            calc_h();
+            calc_h_fft();
+        }
+        // --------------------------------------------------------------
+
+        int frames_count = length % sample_size != 0 ? floor(double(length) / sample_size) + 1 : floor(double(length) / sample_size);
+
         int prev_begin = -sample_size;
         int curr_begin = 0;
         
@@ -155,17 +162,18 @@ int FLT_FilterFile::filtrateBlock(double* in, int length, double* &out, int accu
 
             fft_filtrate(frame2);
             // —оеденить два кадра по алгоритму в массив conv_frames
+            //printf_s("[%d] 1: %d\t2: %d\n", i, frame1.data_size, frame2.data_size);
             convolFull(frame1, frame2);
 
             // «аписать в выходной массив
             if (i == 1) {
                 if (tails) {
-                    for (int i = 0; i < sample_size; i++) {
+                    for (int i = 0; i < add_min + frame1.data_size; i++) {
                         out[prev_begin + i] = conv_frames[i];
                     }
                 }
                 else {
-                    for (int i = 0; i < sample_size - add_min; i++) {
+                    for (int i = 0; i < frame1.data_size; i++) {
                         out[prev_begin + i] = conv_frames[add_min + i];
                     }
                 }

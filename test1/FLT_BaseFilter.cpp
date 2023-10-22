@@ -52,59 +52,6 @@ bool FLT_BaseFilter::fft_filtrate(Frame& frame) {
     return false;
 }
 
-//bool FLT_BaseFilter::init(int N, double fd, int accurancy, int window) {
-//    // ---------------- data_size & fft_size SET 
-//    sample_size = N * 45;
-//    fft_size = 1;
-//    while (fft_size < sample_size)
-//    {
-//        fft_size = fft_size << 1;
-//    }
-//    fft_size *= accurancy;
-//    add_min = N - 1;
-//
-//    // ---------------- Array size set
-//    if (h != nullptr)               delete[] h;
-//    if (h_magnitude != nullptr)     delete[] h_magnitude;
-//    if (h_phase != nullptr)         delete[] h_phase;
-//    if (h_attenuation != nullptr)   delete[] h_attenuation;
-//    if (freq_match != nullptr)      delete[] freq_match;
-//
-//    if (h_fft != nullptr)           fftw_free(h_fft);
-//    if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
-//
-//    h = new double[fft_size];
-//    h_magnitude = new double[fft_size / 2 + 1];
-//    h_phase = new double[fft_size / 2 + 1];
-//    h_attenuation = new double[fft_size / 2 + 1];
-//    freq_match = new double[fft_size];
-//
-//    frame1.init(N, sample_size, fft_size);
-//    frame2.init(N, sample_size, fft_size);
-//
-//    forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
-//    backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
-//
-//    h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
-//    mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
-//
-//    // Расчет окна
-//    if (window) {
-//        if (w != nullptr)   delete[] w;
-//        w = new double[fft_size];
-//        calc_window();
-//    }
-//
-//    // ---------------- Array Calc
-//
-//    // Расчет массива соответствующих частот
-//    for (int i = 0; i < fft_size; i++) {
-//        freq_match[i] = double(i) / fft_size * fd;
-//    }
-//
-//    return 0;
-//}
-
 int FLT_BaseFilter::filtrate(double* in, int length, double*& out, int accurancy, bool tails) {
     // Check Parameters ---------------------------------------------
     if (length <= 0) {
@@ -237,10 +184,10 @@ void FLT_BaseFilter::Frame::init(int N, int data_size, int fft_size) {
 }
 
 bool FLT_BaseFilter::convolFull(Frame& frame1, Frame& frame2) {
-    if (frame1.data_size != frame2.data_size) {
-        printf("Convolution ERROR (convolFull) array sizes are different\n");
-        return 0;
-    }
+    //if (frame1.data_size != frame2.data_size) {
+    //    printf("Convolution ERROR (convolFull) array sizes are different\n");
+    //    return 0;
+    //}
     int size = frame1.data_size;
     for (int i = 0; i < size; i++)
         conv_frames[i] = frame1.data[i];

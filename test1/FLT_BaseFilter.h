@@ -102,7 +102,7 @@ private:
     int filtrate_accurancy = 0;
 
 public:
-    int filtrate(double* in, int length, double*& out, int accurancy, bool tails);
+    virtual int filtrate(double* in, int length, double*& out, int accurancy, bool tails);
     // ---------------- IMPULSE RESPONSE
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
 

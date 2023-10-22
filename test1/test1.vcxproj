@@ -22,10 +22,12 @@
     <ClInclude Include="fftw3.h" />
     <ClInclude Include="FLT_BaseFilter.h" />
     <ClInclude Include="FLT_FilterFile.h" />
+    <ClInclude Include="FLT_FilterPkt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FLT_BaseFilter.cpp" />
     <ClCompile Include="FLT_FilterFile.cpp" />
+    <ClCompile Include="FLT_FilterPkt.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

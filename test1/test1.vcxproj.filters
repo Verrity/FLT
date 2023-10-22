@@ -24,6 +24,9 @@
     <ClInclude Include="fftw3.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="FLT_FilterPkt.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FLT_BaseFilter.cpp">
@@ -33,6 +36,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FLT_FilterPkt.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
