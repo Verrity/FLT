@@ -167,7 +167,7 @@ int main() {
 		printf("ERROR StartTransfer\n");
 
 	double* packet = new double[frame_length];
-	int length_out = frame_length * frames_count;
+	int length_out = frame_length * frames_count + N - 1;
 	double* signal_out = new double[length_out];
 	int index = 0;
 
