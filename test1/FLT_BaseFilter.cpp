@@ -267,6 +267,14 @@ void FLT_BaseFilter::Frame::setData(Frame& frame)
     this->setData(frame.data, 0, frame.data_size);
 }
 
+void FLT_BaseFilter::Frame::switchData(Frame& toFrame, Frame& fromFrame)
+{
+    double* temp = toFrame.data;
+    toFrame.data = fromFrame.data;
+    fromFrame.data = temp;
+
+}
+
 int FLT_BaseFilter::calc_IrLowpassR1B1()
 {
     double& B1 = bands.at(0);

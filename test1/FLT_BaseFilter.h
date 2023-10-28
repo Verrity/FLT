@@ -37,6 +37,7 @@ protected:
         void init(int N, int data_size, int fft_size);
         void setData(double* arr, int begin, int size);
         void setData(Frame& frame);
+        static void switchData(Frame& toFrame, Frame& fromFrame);
     private:
         int fft_size = 0;
         int N = 0;
