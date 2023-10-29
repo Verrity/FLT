@@ -23,8 +23,7 @@ private:
     double* packet2_add_left = nullptr;
     double* packet2_add_right = nullptr;
 
-    int filtrateBlock(double* packet, bool lastPacket);
-    int filtrate1Packet(double* packet);
+    int filtrateFirstPacket(double* packet);
 public:
     //bool setParameters(int N, int accurancy, int length);
     
