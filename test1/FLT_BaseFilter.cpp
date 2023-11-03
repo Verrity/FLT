@@ -242,13 +242,13 @@ void FLT_BaseFilter::convolDifferent(Frame& frame1, Frame& frame2) {
 
 void FLT_BaseFilter::Frame::setData(double* arr, int begin, int size)
 {
-    if (size != this->data_size) {
-        if (data != nullptr) {
-            delete[] data;
-        }
-        data = new double[fft_size];
-        this->data_size = size;
-    }
+    //if (size != this->data_size) {
+    //    if (data != nullptr) {
+    //        delete[] data;
+    //    }
+    //    data = new double[fft_size];
+    //    this->data_size = size;
+    //}
 
     for (int i = 0; i < fft_size; i++) {
         if (i < size)  // Сигнал

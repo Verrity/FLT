@@ -3,6 +3,7 @@
 
 #define FILTER_FIRST_PKT 123
 #define FILTER_INPUT 125
+#define FILTER_ERROR_FFT 12516
 
 class FLT_FilterPkt :
     public FLT_BaseFilter
@@ -16,14 +17,18 @@ private:
     // add_min2 = add_min / 2;
     int add_min2 = 0;
 
-    double* packet1 = nullptr;
+    double* ptrToAllocatedData1 = NULL;
+    double* ptrToAllocatedData2 = NULL;
+    double* packet1 = NULL;
     double* packet1_add_right = nullptr;
 
-    double* packet2 = nullptr;
+    double* packet2 = NULL;
     double* packet2_add_left = nullptr;
     double* packet2_add_right = nullptr;
 
-    int filtrateFirstPacket(double* packet);
+    void filtrateFirstPacket(double* packet);
+    void filtrateIntermediatePacket(double* packet);
+    bool check_fft_size(int fft_size);
 public:
     //bool setParameters(int N, int accurancy, int length);
     
@@ -34,9 +39,14 @@ public:
     int stopTransfer(double*& lastPacket);
     // -----------------------------------------------
     
-    bool startTransfer10(int length, int fft_size);
-    bool filtratePkt10(double* packet);
-    int stopTransfer10(double* packet);
+    bool startTransferBlock(int packet_size, int fft_size);
+    //  опирует данные в казатель (медленнее, чем filtratePktBlock2)
+    bool filtratePktBlock1(double* const packet);
+    // ¬озвращает указатель на данные (быстрее, чем filtratePktBlock1)
+    double* const filtratePktBlock2(double* const packet);
+    // ¬озвращает указатель на массив double
+    double* getLastPktBlock1();
+    void stopTransferBlock();
 
 };
 
