@@ -20,14 +20,14 @@ private:
     double* ptrToAllocatedData1 = NULL;
     double* ptrToAllocatedData2 = NULL;
     double* packet1 = NULL;
-    double* packet1_add_right = nullptr;
+    double* right_tail0 = nullptr;
 
     double* packet2 = NULL;
-    double* packet2_add_left = nullptr;
-    double* packet2_add_right = nullptr;
+    double* left_tail = nullptr;
+    double* right_tail = nullptr;
 
     void filtrateFirstPacket(double* packet);
-    void filtrateIntermediatePacket(double* packet);
+    void filtrateIntermediatePacket(double* packet, double* left_tail, double* right_tail);
     bool check_fft_size(int fft_size);
 public:
     //bool setParameters(int N, int accurancy, int length);
@@ -39,13 +39,26 @@ public:
     int stopTransfer(double*& lastPacket);
     // -----------------------------------------------
     
+    /*Allocates memory and means ready for use filtratePktBlock*
+    packet_size - size of your packet (const)
+    fft_size 
+    */
     bool startTransferBlock(int packet_size, int fft_size);
-    //  опирует данные в казатель (медленнее, чем filtratePktBlock2)
+    /*Puts data in your pointer (slower than filtratePktBlock2)
+    packet - your input and output data
+    returns false, if packet is first (you must skip iteration)
+    returns true, if the packet is intermediate (returns the previous package at the current iteration)
+    [use getLastPktBlock1() to get the latest packet]
+    */
     bool filtratePktBlock1(double* const packet);
     // ¬озвращает указатель на данные (быстрее, чем filtratePktBlock1)
+    /*Puts data in your pointer
+    returns a pointer to an array of data
+    you free up the memory yourself
+    */
     double* const filtratePktBlock2(double* const packet);
     // ¬озвращает указатель на массив double
-    double* getLastPktBlock1();
+    double* getLatestPktBlock1();
     void stopTransferBlock();
 
 };

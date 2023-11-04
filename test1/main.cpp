@@ -143,52 +143,57 @@ int main() {
 	int N = 257;
 	double fd = 44100;
 	int window = 1;
-	int B1 = 500;
-	int baseFreq = 30;
+	int B1 = 120 + 120*3 + 120*5 + 120*7 + 120*9;
+	int baseFreq = 120;
 	int harmonicsCount = 15;
 
 	int packet_count = 5;
-	int packet_length = 10'000;
+	int packet_length = 131'072;
 	int signal_length = packet_length * packet_count;
 
-	printf("\n======== Creating arrays             ========\n");
+	//printf("\n-------- Creating arrays             --------\n");
 
 	double* signal_in = generate_pulse(signal_length, baseFreq, fd, harmonicsCount);
 	double* signal_out = new double[signal_length];
 	double** master_packet = new double* [packet_count];
 
+	printf("\n\n======= Filter parameters          =======\n\n");
+	printf("N:               %d\n", N);
+	printf("Fd:              %.2f Hz\n", fd);
+	printf("window:          %d\n", window);
+	printf("Band:            %d Hz\n", B1);
+
 	printf("\n\n======= Generate Signal parameters =======\n\n");
 	printf("Signal length:   %d\n", signal_length);
-	printf("Band:            %d\n", B1);
-	printf("Max frequency:   %d\n", baseFreq * harmonicsCount * 2);
-	printf("Base frequency:  %d\n", baseFreq);
+	printf("Base frequency:  %d Hz\n", baseFreq);
 	printf("Harmonics count: %d\n", harmonicsCount);
+	printf("Max frequency:   %d Hz\n", baseFreq* harmonicsCount * 2);
 
 	printf("\n\n======= Signal transfer parameters =======\n\n");
-	printf("Signal_length: %d\n", signal_length);
+	printf("Signal length: %d\n", signal_length);
 	printf("Packets count: %d\n", packet_count);
 	printf("Packet length: %d\n", packet_length);
 
-	printf("\n======== Arrays created              ========\n");
-	printf("\n======== Setting impulse response    ========\n");
+	//printf("\n-------- Arrays created              --------\n");
+	//printf("\n-------- Setting impulse response    --------\n");
 
 	FLT_FilterPkt filter_pkt;
 	if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
 		printf("Error in set type: %d", filter_pkt.get_error_code());
 		exit(-1);
 	}
-	printf("\n========                             ========\n");
-	printf("\n======== Impulse response set        ========\n");
-	printf("\n======== Starting transfer           ========\n");
 
-	if (!filter_pkt.startTransferBlock(packet_length, 2048))
+	//printf("\n-------- Impulse response set        --------\n");
+	//printf("\n-------- Starting transfer           --------\n");
+
+	if (!filter_pkt.startTransferBlock(packet_length, 512))
 	{
 		printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
 		exit(-1);
 	}
 
-	printf("\n======== Transfer started            ========\n");
-	printf("\n======== Creating packets            ========\n");
+	//printf("\n-------- Transfer started            --------\n");
+	//printf("\n-------- Creating packets            --------\n");
 	// Создам пакеты
 	int begin = 0;
 	for (int j = 0; j < packet_count; j++)
@@ -199,10 +204,10 @@ int main() {
 		begin += packet_length;
 	}
 	
-	printf("\n======== Packets created             ========\n");
-	//printf("\n========                             ========\n");
+	//printf("\n-------- Packets created             --------\n");
+	//printf("\n--------                             --------\n");
 
-	printf("\n======== Starting filtration         ========\n");
+	//printf("\n-------- Starting filtration         --------\n");
 	// Получаем пакеты и фильтруем их, записываем
 	begin = 0;
 	double* packet;
@@ -221,29 +226,29 @@ int main() {
 		}
 	}
 
-	printf("\n======== Filtration completed        ========\n");
-	printf("\n======== Getting last packet         ========\n");
+	//printf("\n-------- Filtration completed        --------\n");
+	//printf("\n-------- Getting last packet         --------\n");
 
 	// Получаем последний пакет
-	double* lastPacket = filter_pkt.getLastPktBlock1();
+	double* lastPacket = filter_pkt.getLatestPktBlock1();
 	for (int i = 0; i < packet_length; i++)
 		signal_out[begin + i] = lastPacket[i];
-
-	printf("\n======== Last packet got             ========\n");
-	printf("\n======== Stopping transfer           ========\n");
+	
+	//printf("\n-------- Last packet got             --------\n");
+	//printf("\n-------- Stopping transfer           --------\n");
 
 	// Останавливаем передачу
 	filter_pkt.stopTransferBlock();
 
-	printf("\n======== Transfer stopped            ========\n");
-	printf("\n======== Writting signals to files   ========\n");
+	//printf("\n-------- Transfer stopped            --------\n");
 
+	printf("\n-------- Writting signals to files   --------\n");
 	// записываем массивы в файл
 	writeToFile(5, signal_in, signal_length);
 	writeToFile(6, signal_out, signal_length);
+	printf("\n-------- Signals wrotted             --------\n");
 
-	printf("\n======== Signals wrotted             ========\n");
-	printf("\n======== Starting free               ========\n");
+	//printf("\n-------- Starting free               --------\n");
 
 	// Чистка
 	delete[] lastPacket;
@@ -255,7 +260,7 @@ int main() {
 	delete[] signal_in;
 	delete[] signal_out;
 
-	printf("\n======== Free ended                  ========\n");
+	//printf("\n-------- Free ended                  --------\n");
 
 	return 0;
 }
