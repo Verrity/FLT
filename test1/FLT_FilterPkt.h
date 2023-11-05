@@ -2,7 +2,7 @@
 #include "FLT_BaseFilter.h"
 
 #define FILTER_FIRST_PKT 123
-#define FILTER_INPUT 125
+#define FILTER_ERROR_VALUE 125
 #define FILTER_ERROR_FFT 12516
 
 class FLT_FilterPkt :
@@ -11,27 +11,26 @@ class FLT_FilterPkt :
 protected:
 
 private:
+    int value = 1;
+    int min_fft = 0;
+
     int packet_size = 0;
     int frame_size = 0;
     int packet_index = 0;
-    // add_min2 = add_min / 2;
-    int add_min2 = 0;
+    int add_min2 = 0; //  = add_min / 2;
 
-    double* ptrToAllocatedData1 = NULL;
-    double* ptrToAllocatedData2 = NULL;
-    double* packet1 = NULL;
+    double* ptrToAllocatedData1 = nullptr;
+    double* ptrToAllocatedData2 = nullptr;
+    double* packet1 = nullptr;
     double* right_tail0 = nullptr;
 
-    double* packet2 = NULL;
+    double* packet2 = nullptr;
     double* left_tail = nullptr;
     double* right_tail = nullptr;
 
-    void filtrateFirstPacket(double* packet);
-    void filtrateIntermediatePacket(double* packet, double* left_tail, double* right_tail);
-    bool check_fft_size(int fft_size);
+    void filtratePacketBlock(double* packet, double* left_tail, double* right_tail);
 public:
-    //bool setParameters(int N, int accurancy, int length);
-    
+
     // -----------------------------------------------
     bool startTransfer(int length, int accurancy);
     // С хвостами, в тот же массив
@@ -43,7 +42,7 @@ public:
     packet_size - size of your packet (const)
     fft_size 
     */
-    bool startTransferBlock(int packet_size, int fft_size);
+    bool startTransferBlock(int packet_size, unsigned int value);
     /*Puts data in your pointer (slower than filtratePktBlock2)
     packet - your input and output data
     returns false, if packet is first (you must skip iteration)

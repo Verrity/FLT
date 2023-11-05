@@ -1,32 +1,5 @@
 #include "FLT_FilterPkt.h"
 #include <iostream>
-//bool FLT_FilterPkt::setParameters(int N, int accurancy, int length)
-//{
-//	if (!check_N(N) || !check_accurancy(accurancy)) {
-//		return 0;
-//	}
-//	if (length < 1) {
-//		error_code = FILTER_ERROR_LENGTH;
-//		return 0;
-//	}
-//
-//	this->N = N;
-//	this->accurancy = accurancy;
-//	this->packet_size = length;
-//	add_min = N - 1;
-//
-//	fft_size = 1;
-//	while (fft_size < (packet_size + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
-//	{
-//		fft_size = fft_size << 1;
-//	}
-//	fft_size << accurancy - 1;
-//
-//	conv_size = packet_size * 2 + add_min;
-//}
-
-
-
 
 bool FLT_FilterPkt::startTransfer(int packet_length, int accurancy)
 {
@@ -99,10 +72,7 @@ bool FLT_FilterPkt::filtratePkt1(double* packet)
 
 		// Записать в выходной массив frame1.data
 		for (int i = 0; i < packet_size; i++)
-		{
 			packet[i] = conv_frames[i];
-			//printf("%f\n", packet[i]);
-		}
 
 		// Переместить соединенный текущий массив в предыдущий массив
 		for (int i = 0; i < fft_size; i++) // add_min + packet_size + 1 = packet_length(conv_frames) = fft_size
@@ -122,337 +92,9 @@ int FLT_FilterPkt::stopTransfer(double* &lastPacket)
 
 }
 
-void FLT_FilterPkt::filtrateFirstPacket(double* packet)
-{
-	//int frames_count = packet_size % frame_size != 0 ? floor(double(packet_size) / frame_size) + 1 : floor(double(packet_size) / frame_size);
-
-	//int prev_begin = -frame_size;
-	//int curr_begin = 0;
-
-	//int begFrame = 0;	// Текущая позиция в frame1
-	//int begPacket = 0;	// Текущая позиция в Packet1
-
-	//// Почему [prev_begin, curr_begin] и [begFrame, begPacket]
-	//// Логика в начале старая, а разбираться лень
-
-	//for (int i = 1; i < frames_count; i++) {
-	//	prev_begin = prev_begin + packet_size;
-	//	curr_begin = curr_begin + packet_size;
-
-	//	// Загрузить, обработать frame1
-	//	if (i == 1) {
-	//		// --- Если кадр первый
-	//		frame1.setData(packet, prev_begin, packet_size);
-	//		fft_filtrate(frame1);
-	//	}
-	//	else {  
-	//		// --- Если кадр не первый
-	//		// Сменить полусвёрнутый frame2 на frame1
-	//		Frame::switchData(frame1, frame2);
-	//	}
-
-	//	// Обработать текущий кадр (CURRENT_FRAME)
-	//	if (i == frames_count - 1) {// Если он последний
-	//		int res = packet_size - curr_begin;
-	//		frame2.setData(packet, curr_begin, res);
-	//	}
-	//	else {                      // Если он не последний
-	//		frame2.setData(packet, curr_begin, packet_size);
-	//	}
-
-	int frames_count = packet_size % frame_size != 0 ? floor(double(packet_size) / frame_size) + 1 : floor(double(packet_size) / frame_size);
-
-	int begFrame = 0;	// Текущая позиция в frame1
-	int begPacket = 0;	// Текущая позиция в Packet1
-
-	for (int i = 1; i < frames_count; i++) {
-
-		// ==========================================================================================
-
-		// ------------------ Свёртка и фильтрация кадров
-		switch (i)
-		{
-		case 1:	// Если кадр первый
-			// Скопировать данные в frame1.data и фильтровать
-			frame1.setData(packet, 0, frame_size);
-			fft_filtrate(frame1);
-
-			/*
-				Свёртка frame1 и frame2, и запись кадра frame1 без левого хвоста
-				в Packet1, frame2 выйдет со свёрнутым левым хвостом,
-				далее его логическое начало должно быть сдвинуто на add_min2.
-			*/
-
-			// Переписываем от конца левого хвоста (обрезали) до участка суммирования
-			begFrame = add_min2;
-			for (int i = 0; i < frame_size - add_min2; i++)
-				packet[begPacket + i] = frame1.data[begFrame + i];
-			begFrame += frame_size - add_min2;
-			begPacket += frame_size - add_min2;
-			break;
-
-		case 2:	// Если кадр второй, то frame2 требуется загрузить и закончить свёртку с frame1 (i == 1) и frame2 (i == 2)
-			// Скопировать данные в frame2.data и фильтровать
-			frame2.setData(packet, begPacket, frame_size);
-			fft_filtrate(frame2);
-
-			// Получили frame2, можно закончить свёртку frame1 (i == 1) и frame2 (i == 2)
-			// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-			// --- на frame1
-			for (int i = 0; i < add_min2; i++)
-				packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[i];
-			begFrame += add_min2;
-			begPacket += add_min2;
-			// --- на frame2 
-			for (int i = 0; i < add_min2; i++)
-				// Записываем данные frame2 от начала (со сдвигом на add_min2), свёрнутые с хвостом frame1
-				frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-			break;
-
-		default:
-			// Если кадр промежуточный (не первый, не второй и не последний)
-			if ((i != 1) && (i != (frames_count - 1)))
-			{
-				// Сменить полусвёрнутый frame2 на frame1
-				Frame::switchData(frame1, frame2);
-				// Скопировать данные в frame2.data и фильтровать
-				frame2.setData(packet, begPacket, frame_size);
-				fft_filtrate(frame2);
-
-				/*
-				Свёртка frame1 и frame2, и запись кадра frame1 в Packet1,
-				frame2 выйдет со свёрнутым левым хвостом, далее его логическое
-				начало должно быть сдвинуто на add_min2.
-				*/
-
-				// Переписываем frame1 (со сдвигом начала на add_min2) до начала свёртки
-				begFrame = add_min2;
-				for (int i = 0; i < frame_size - add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i];
-				begFrame += frame_size - add_min2;
-				begPacket += frame_size - add_min2;
-				// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-				// --- на frame1
-				for (int i = 0; i < add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[i];
-				begFrame += add_min2;
-				begPacket += add_min2;
-				// --- на frame2
-				for (int i = 0; i < add_min2; i++)
-					frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-			}
-			// Если кадр последний
-			else {
-				// Сколько элементов осталось записать в Packet1 из frame2 в последнем кадре
-				int res = packet_size - (frames_count - 1) * frame_size;
-
-				frame2.setData(packet, begPacket, res);
-				fft_filtrate(frame2);
-
-				/*
-				Свёртка frame1 и frame2, и запись кадра frame1 в Packet1,
-				frame2 выйдет со свёрнутым левым хвостом, далее его логическое
-				начало должно быть сдвинуто на add_min2.
-				*/
-
-				// Переписываем frame1 (со сдвигом начала на add_min2) до начала свёртки
-				begFrame = add_min2;
-				for (int i = 0; i < frame_size - add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i];
-				begFrame += frame_size - add_min2;
-				begPacket += frame_size - add_min2;
-				// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-				// --- на frame1
-
-				// Сколько вообще лишних элементов в frame2 (тк. (res + add_min), может быть != fft_size)
-				int other = fft_size - frame_size - add_min;
-				// Сколько нужно отступить слева в frame2
-				int begFrame2 = other / 2;
-
-				for (int i = 0; i < add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
-				begFrame += add_min2;
-				begFrame2 += add_min2;
-				begPacket += add_min2;
-
-				// --- на frame2
-				// Свертка сигнала frame2 с хвостом frame1
-				for (int i = 0; i < add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
-				begFrame += add_min2;
-				begFrame2 += add_min2;
-				begPacket += add_min2;
-
-				// Запись сигнала frame2 без хвоста
-				for (int i = 0; i < frame_size - add_min2; i++)
-					packet[begPacket + i] = frame2.data[begFrame2 + i];
-				begFrame2 += frame_size - add_min2;
-
-				// Запись правого хвоста add_min2 в right_tail0 
-				// (нужно учитывать, что add_min2 элементов слева от правого хвоста 
-				// требуется свернуть со следующим пакетом)
-				for (int i = 0; i < add_min2; i++)
-					right_tail0[i] = frame2.data[begFrame2 + i];
-			}
-			break;
-		}
-
-
-		// ==========================================================================================================
-
-		//// Загрузить, обработать frame1
-		//if (i == 1) {
-		//	// --- Если кадр первый
-		//	frame1.setData(packet, 0, packet_size);
-		//	fft_filtrate(frame1);
-		//}
-		//else {
-		//	// --- Если кадр не первый
-		//	// Сменить полусвёрнутый frame2 на frame1
-		//	Frame::switchData(frame1, frame2);
-		//}
-
-		//// Сколько элементов осталось записать в Packet1 из frame2 в последнем кадре
-		//int res = packet_size - (frames_count - 1) * frame_size;
-		//// Сколько вообще лишних элементов в frame2 (тк. (res + add_min), может быть != fft_size)
-		//int other = fft_size - packet_size - add_min;
-
-		//// Обработать текущий кадр frame2
-		//if (i == frames_count - 1) {// Если он последний
-		//	frame2.setData(packet, begPacket, packet_size);
-		//}
-		//else {                      // Если он не последний
-		//	frame2.setData(packet, begPacket, packet_size);
-		//}
-
-		//fft_filtrate(frame2);
-		//convolFull(frame1, frame2);
-
-		//// ==========================================================================================
-
-		//// ------------------ Свёртка кадров
-		//// Если кадр первый
-		//if (i == 1) { 
-		//	// Скопировать данные в frame1.data и фильтровать
-		//	frame1.setData(packet, 0, packet_size);
-		//	fft_filtrate(frame1);
-
-		//	/*
-		//		Свёртка frame1 и frame2, и запись кадра frame1 без левого хвоста
-		//		в Packet1, frame2 выйдет со свёрнутым левым хвостом,
-		//		далее его логическое начало должно быть сдвинуто на add_min2.
-		//	*/
-
-		//	// Переписываем от конца левого хвоста (обрезали) до участка суммирования
-		//	begFrame = add_min2;
-		//	for (int i = 0; i < frame_size - add_min2; i++)
-		//		packet[begPacket + i] = frame1.data[begFrame + i];
-		//	begFrame += frame_size - add_min2;
-		//	begPacket += begFrame;
-		//}
-		//else {
-		//	// Если кадр второй, то frame2 требуется загрузить и закончить конец свёртки с frame1
-		//	if (i == 2) 
-		//	{
-		//		// Скопировать данные в frame2.data и фильтровать
-		//		frame2.setData(packet, begPacket, packet_size);
-		//		fft_filtrate(frame2);
-
-		//		// Получили frame2, можно закончить свёртку frame1 (i == 1) и frame2 (i == 2)
-		//		// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-		//		// --- на frame1
-		//		for (int i = 0; i < add_min2; i++)
-		//			packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[i];
-		//		begFrame += add_min2;
-		//		begPacket += begFrame;
-		//		// --- на frame2 
-		//		for (int i = 0; i < add_min2; i++)
-		//			frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-		//	}
-		//	else
-		//	{
-		//		// Если кадр промежуточный (не первый, не второй и не последний)
-		//		if ((i != 1) && (i != (frames_count - 1)))
-		//		{
-		//			// Сменить полусвёрнутый frame2 на frame1
-		//			Frame::switchData(frame1, frame2);
-		//			// Скопировать данные в frame2.data и фильтровать
-		//			frame2.setData(packet, begPacket, packet_size);
-		//			fft_filtrate(frame2);
-
-		//			/*
-		//			Свёртка frame1 и frame2, и запись кадра frame1 в Packet1,
-		//			frame2 выйдет со свёрнутым левым хвостом, далее его логическое
-		//			начало должно быть сдвинуто на add_min2.
-		//			*/
-
-		//			// Переписываем frame1 (со сдвигом начала на add_min2) до начала свёртки
-		//			begFrame = add_min2;
-		//			for (int i = 0; i < frame_size - add_min2; i++)
-		//				packet[begPacket + i] = frame1.data[begFrame + i];
-		//			begFrame += frame_size - add_min2;
-		//			begPacket += begFrame;
-		//			// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-		//			// --- на frame1
-		//			for (int i = 0; i < add_min2; i++)
-		//				packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[i];
-		//			begFrame += add_min2;
-		//			begPacket += begFrame;
-		//			// --- на frame2
-		//			for (int i = 0; i < add_min2; i++)
-		//				frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-		//		}
-		//		// Если кадр последний
-		//		else {
-		//			frame2.setData(packet, begPacket, res);
-		//			fft_filtrate(frame2);
-
-		//			/*
-		//			Свёртка frame1 и frame2, и запись кадра frame1 в Packet1,
-		//			frame2 выйдет со свёрнутым левым хвостом, далее его логическое
-		//			начало должно быть сдвинуто на add_min2.
-		//			*/
-
-		//			// Переписываем frame1 (со сдвигом начала на add_min2) до начала свёртки
-		//			begFrame = add_min2;
-		//			for (int i = 0; i < frame_size - add_min2; i++)
-		//				packet[begPacket + i] = frame1.data[begFrame + i];
-		//			begFrame += frame_size - add_min2;
-		//			begPacket += begFrame;
-		//			// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
-		//			// --- на frame1
-
-		//			// Сколько нужно отступить слева в frame2
-		//			int begFrame2 = other / 2;
-
-		//			for (int i = 0; i < add_min2; i++)
-		//				packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
-		//			begFrame += add_min2;
-		//			begFrame2 += add_min2;
-		//			begPacket += begFrame;
-
-		//			// --- на frame2
-		//			// Свертка сигнала frame2 с хвостом frame1
-		//			for (int i = 0; i < add_min2; i++)
-		//				packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
-		//			begFrame += add_min2;
-		//			begFrame2 += add_min2;
-		//			begPacket += begFrame;
-
-		//			// Запись сигнала frame2 без хвоста
-		//			for (int i = 0; i < res - add_min2; i++)
-		//				packet[begPacket + i] = frame2.data[begFrame2 + i];
-		//		}
-		//	}
-		//}
-		//// ==========================================================================================
-	}
-}
-
-void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail, double* right_tail)
+void FLT_FilterPkt::filtratePacketBlock(double* packet, double* left_tail, double* right_tail)
 {
 	int frames_count = packet_size % frame_size != 0 ? floor(double(packet_size) / frame_size) + 1 : floor(double(packet_size) / frame_size);
-	//printf("\n\nFrames count: %d\n", frames_count);
 	int begFrame = 0;	// Текущая позиция в frame1
 	int begPacket = 0;	// Текущая позиция в записывании Packet1
 
@@ -482,18 +124,12 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 				packet[i] = frame1.data[begFrame + i];
 			begFrame += frame_size - add_min2;
 			begPacket = frame_size - add_min2;
-			//printf("\n-Первый кадр обработан-\n");
 			break;
 
 		case 1:	// Если кадр второй, то frame2 требуется загрузить и закончить свёртку с frame1 (i == 1) и frame2 (i == 2)
 			// Скопировать данные в frame2.data и фильтровать
-			//printf("-Задаю дату-\n");
-			//std::cout << "data sett start" << std::endl;
 			frame2.setData(packet, frame_size, frame_size);
-			//printf("-Дата задана-\n");
-			//printf("-Фильтрую-\n");
 			fft_filtrate(frame2);
-			///printf("-Профильтровано-\n");
 			// Получили frame2, можно закончить свёртку frame1 (i == 1) и frame2 (i == 2)
 			// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
 			// --- на frame1
@@ -505,8 +141,6 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 			for (int i = 0; i < add_min2; i++)
 				// Записываем данные frame2 от левого хвоста (со сдвигом на add_min2), свёрнутые с хвостом frame1
 				frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-			// beginFrame дошёл до конца frame1
-			//printf("-Второй кадр обработан-\n");
 			break;
 
 		default:
@@ -540,8 +174,6 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 				// --- на frame2
 				for (int i = 0; i < add_min2; i++)
 					frame2.data[add_min2 + i] = frame1.data[begFrame + i] + frame2.data[add_min2 + i];
-				// beginFrame дошёл до конца frame1
-				//printf("-Промежуточный кадр обработан-\n");
 			}
 			// Если кадр последний
 			else {
@@ -551,17 +183,10 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 				int beginOrigin = frame_size * j;
 				// Сколько элементов осталось записать в Packet1 из frame2 в последнем кадре
 				int res = packet_size - beginOrigin;
-				//printf("res: %d\n", res);
+				printf("res: %d\n", res);
 
 				frame2.setData(packet, beginOrigin, res);
 				fft_filtrate(frame2);
-
-				//if (left_tail == nullptr) {
-				//	for (int i = 0; i < fft_size; i++)
-				//	{
-				//		std::cout << frame2.data[i] << std::endl;
-				//	}
-				//}
 
 				/*
 				Свёртка frame1 и frame2, и запись кадра frame1 в Packet1,
@@ -575,13 +200,9 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 					packet[begPacket + i] = frame1.data[begFrame + i];
 				begFrame += frame_size - add_min2;
 				begPacket += frame_size - add_min2;
+
 				// ---------- Свёртка от начала участка суммирования до конца участка суммирования.
 				// --- на frame1
-
-				// Сколько вообще лишних элементов в frame2 (тк. (res + add_min), может быть != fft_size)
-				//int other = fft_size - res - add_min;
-				// Сколько нужно отступить слева в frame2
-				//int begFrame2 = other / 2;
 				int begFrame2 = 0;
 
 				for (int i = 0; i < add_min2; i++)
@@ -591,67 +212,74 @@ void FLT_FilterPkt::filtrateIntermediatePacket(double* packet, double* left_tail
 				begPacket += add_min2;
 
 				// --- на frame2
-				// Свертка сигнала frame2 с хвостом frame1
-				for (int i = 0; i < add_min2; i++)
-					packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
-				//begFrame += add_min2;	// beginFrame дошёл до конца frame1
-				begFrame2 += add_min2;
-				begPacket += add_min2;
+				
+				// Если оставшееся количество элементов меньше длины хвоста
+				if (res >= add_min2) {
+					// Свертка сигнала frame2 с хвостом frame1
+					for (int i = 0; i < add_min2; i++)
+						packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
+					begFrame2 += add_min2;
+					begPacket += add_min2;
 
-				// Запись сигнала frame2 без хвоста
-				for (int i = 0; i < abs(res - add_min2); i++)
-					packet[begPacket + i] = frame2.data[begFrame2 + i];
-				begFrame2 += abs(res - add_min2);
+					// Запись сигнала frame2 без хвоста
+					for (int i = 0; i < abs(res - add_min2); i++)
+						packet[begPacket + i] = frame2.data[begFrame2 + i];
+					begFrame2 += abs(res - add_min2);
 
-				// Запись правого хвоста (add_min2) в right_tail 
-				// (нужно учитывать, что add_min2 элементов слева от правого хвоста 
-				// требуется свернуть со следующим пакетом)
-				for (int i = 0; i < add_min2; i++)
-					right_tail[i] = frame2.data[begFrame2 + i];
+					// Запись правого хвоста (add_min2) в right_tail
+					for (int i = 0; i < add_min2; i++)
+						right_tail[i] = frame2.data[begFrame2 + i];
+				}
+				else {
+					// Свертка сигнала frame2 с хвостом frame1
+					for (int i = 0; i < res; i++)
+						packet[begPacket + i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
+					begFrame += res;
+					begFrame2 += res;
 
-				//printf("-Последний кадр обработан-\n");
+					// Запись правого хвоста (add_min2) в right_tail
+					for (int i = 0; i < add_min2; i++)
+						if (i < add_min2 - res)
+							right_tail[i] = frame1.data[begFrame + i] + frame2.data[begFrame2 + i];
+						else
+							right_tail[i] = frame2.data[begFrame2 + i];
+				}
 			}
 			break;
 		}
 	}
 }
 
-bool FLT_FilterPkt::check_fft_size(int fft_size)
+bool FLT_FilterPkt::startTransferBlock(int packet_size, unsigned int value)
 {
-	if (fft_size <= 0) {
-		return 0;  // Нулевое или отрицательное число не является степенью двойки
+	this->value = 1;
+	// Максимально близкое значение БПФ к числу N справа
+	min_fft = 1;
+	while (min_fft < N) {
+		min_fft = min_fft << 1;
 	}
-	// 0 - степень двойки
-	bool result = ((fft_size & (fft_size - 1)) == 0);
-	if (!result || ((fft_size / 2) < (N - 1))) { // если степень двойки, fft_size должен быть больше N минимум в 2 раза
-		error_code = FILTER_ERROR_FFT;
-		return false;
-	}
-	return true;
-}
-
-bool FLT_FilterPkt::startTransferBlock(int packet_size, int fft_size)
-{
+	if (value > 0) 
+		this->value = value;
+	// Определяем размер БПФ
+	fft_size = min_fft << this->value;
 	add_min = N - 1;
 	add_min2 = add_min / 2;
 
-	if (
-		!(check_fft_size(fft_size)) ||
-		((packet_size / 4) < (fft_size - add_min)) // Если длина меньше, чем 4 кадра
-		)
+	if ((packet_size / 4) < (fft_size - add_min)){ // Если длина меньше, чем 4 кадра
+		error_code = FILTER_ERROR_VALUE;
 		return false;
+	}
 
 	frame_size = fft_size - add_min;
 	this->packet_size = packet_size;
-	this->fft_size = fft_size;
 	add_min = N - 1;
 	add_min2 = add_min / 2;
 	packet_index = 0;
-	printf("\n\n======= Generate Signal parameters =======\n\n");
-	printf("add_min = %d\n", add_min);
-	printf("add_min2 = %d\n", add_min2);
-	printf("fft_size = %d\n", fft_size);
-	printf("frame_size = %d\n", frame_size);
+	//printf("\n\n======= Local Transfer parameters =======\n\n");
+	//printf("add_min = %d\n", add_min);
+	//printf("add_min2 = %d\n", add_min2);
+	//printf("fft_size = %d\n", fft_size);
+	//printf("frame_size = %d\n", frame_size);
 
 	// Освобождается в этом Классе ---------------
 	if (right_tail0	!= nullptr)	delete[] right_tail0;
@@ -702,27 +330,19 @@ bool FLT_FilterPkt::filtratePktBlock1(double* const packet)
 
 	if (packet_index == 1)
 	{
-		//printf("=== %-3d) Try to get first packet\t/\t", packet_index);
 		// Первый кадр не будет возвращен, поэтому его требуеся сохранить
 		packet1 = ptrToAllocatedData1;
 		packet2 = ptrToAllocatedData2;
 
 		memcpy(packet1, packet, sizeof(double) * packet_size);
+		filtratePacketBlock(packet1, nullptr, right_tail0);
 
-		//filtrateFirstPacket(packet1);
-		filtrateIntermediatePacket(packet1, nullptr, right_tail0);
-		//printf("first packet getted\n");
 		return false;
 	}
 	else {
-		//printf("=== %-3d) Try to get packet      / ", packet_index);
-		//printf("TRY memcpy / ");
 		memcpy(packet2, packet, sizeof(double) * packet_size);
-		//printf("OK / ");
-		//printf("TRY filtrate / ");
-		filtrateIntermediatePacket(packet2, left_tail, right_tail);
-		//printf("OK / ");
-		//printf("TRY convol / ");
+		filtratePacketBlock(packet2, left_tail, right_tail);
+
 		// Оба пакета фильтрованы, требуется их свернуть
 		int begPacket1 = packet_size - add_min2;
 		for (int i = 0; i < add_min2; i++)
@@ -733,11 +353,8 @@ bool FLT_FilterPkt::filtratePktBlock1(double* const packet)
 			packet2[i] = packet2[i] + right_tail0[i];
 		}
 
-		//printf("OK / ");
-		// 
-		//printf("TRY memcpy / ");
 		memcpy(packet, packet1, sizeof(double) * packet_size);
-		//printf("OK / ");
+		
 		double* temp0 = packet1;
 		packet1 = packet2;
 		packet2 = temp0;
@@ -745,7 +362,7 @@ bool FLT_FilterPkt::filtratePktBlock1(double* const packet)
 		double* temp = right_tail0;
 		right_tail0 = right_tail;
 		right_tail = temp;
-		//printf("packet getted\n");
+
 		return true;
 	}
 }
@@ -769,7 +386,7 @@ double* const FLT_FilterPkt::filtratePktBlock2(double* const packet)
 
 	//case 2:
 	//	memcpy(packet2, packet, sizeof(double) * packet_size);
-	//	filtrateIntermediatePacket(packet2);
+	//	filtratePacketBlock(packet2);
 	//	// Оба пакета фильтрованы, требуется их свернуть
 	//	for (int i = 0; i < add_min2; i++)
 	//	{
@@ -786,7 +403,7 @@ double* const FLT_FilterPkt::filtratePktBlock2(double* const packet)
 	//	packet2 = ptrToAllocatedData1;
 
 	//	memcpy(packet2, packet, sizeof(double) * packet_size);
-	//	filtrateIntermediatePacket(packet2);
+	//	filtratePacketBlock(packet2);
 	//	// Оба пакета фильтрованы, требуется их свернуть
 	//	for (int i = 0; i < add_min2; i++)
 	//	{
@@ -811,6 +428,8 @@ double* FLT_FilterPkt::getLatestPktBlock1()
 
 void FLT_FilterPkt::stopTransferBlock()
 {
+	value = 1;
+	min_fft = 1;
 	packet_size	= 0;
 	frame_size = 0;
 	packet_index = 0;

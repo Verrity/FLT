@@ -143,12 +143,13 @@ int main() {
 	int N = 257;
 	double fd = 44100;
 	int window = 1;
-	int B1 = 120 + 120*3 + 120*5 + 120*7 + 120*9;
-	int baseFreq = 120;
+	//int B1 = 120 + 120*3 + 120*5 + 120*7 + 120*9;
+	int B1 = 500;
+	int baseFreq = 50;
 	int harmonicsCount = 15;
 
 	int packet_count = 5;
-	int packet_length = 131'072;
+	int packet_length = 13'671;
 	int signal_length = packet_length * packet_count;
 
 	//printf("\n-------- Creating arrays             --------\n");
@@ -186,7 +187,7 @@ int main() {
 	//printf("\n-------- Impulse response set        --------\n");
 	//printf("\n-------- Starting transfer           --------\n");
 
-	if (!filter_pkt.startTransferBlock(packet_length, 512))
+	if (!filter_pkt.startTransferBlock(packet_length, 0))
 	{
 		printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
 		exit(-1);
@@ -230,7 +231,8 @@ int main() {
 	//printf("\n-------- Getting last packet         --------\n");
 
 	// Получаем последний пакет
-	double* lastPacket = filter_pkt.getLatestPktBlock1();
+	double* lastPacket = nullptr;
+	lastPacket = filter_pkt.getLatestPktBlock1();
 	for (int i = 0; i < packet_length; i++)
 		signal_out[begin + i] = lastPacket[i];
 	

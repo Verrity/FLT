@@ -249,15 +249,17 @@ void FLT_BaseFilter::Frame::setData(double* arr, int begin, int size)
     //    data = new double[fft_size];
     //    this->data_size = size;
     //}
+    this->data_size = size;
 
     for (int i = 0; i < fft_size; i++) {
-        if (i < size)  // Сигнал
+        if (i < data_size)  // Сигнал
             data[i] = arr[begin + i];
         else        // Дополнить нулями для БПФ
             data[i] = 0;
     }
+    //printf("Begin %-5d end %-5d size %-5d\n", begin, begin + size - 1, size);
 
-    add_other = fft_size - size - (N - 1);
+    add_other = fft_size - data_size - (N - 1);
     add_other_left = add_other / 2;
     add_other_right = add_other - add_other_left;
 }
