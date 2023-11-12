@@ -81,7 +81,18 @@ protected:
     bool check_accurancy(int accurancy);
     bool check_window(int window);
     // --- BANDS
-    bool check_band_LowpassR1B1(double band, double fd);
+    //bool check_band_LowpassR1B1(double band, double fd);
+    //bool check_band_LowpassR2B2(double band1, double band2, double fd);
+    //bool check_band_HighpassR1B1(double band, double fd);
+    //bool check_band_HighpassR2B2(double band1, double band2, double fd);
+    //bool check_band_BandpassR1B1(double band1, double band2, double fd);
+    //bool check_band_BandpassR2B2(double band1, double band2, double band3, double band4, double fd);
+    //bool check_band_BandstopR1B1(double band1, double band2, double fd);
+    //bool check_band_BandstopR2B2(double band1, double band2, double band3, double band4, double fd);
+
+    bool check_bands(double band, double fd);
+    bool check_bands(double band1, double band2, double fd);
+    bool check_bands(double band1, double band2, double band3, double band4, double fd);
 
     bool convolFull(Frame& frame1, Frame& frame2);
     void convolDifferent(Frame& frame1, Frame& frame2);
@@ -89,6 +100,13 @@ protected:
     // ---------------- CALCULATION
     // --- IR
     int calc_IrLowpassR1B1();
+    int calc_IrLowpassR2B2();
+    int calc_IrHighpassR1B1();
+    int calc_IrHighpassR2B2();
+    int calc_IrBandpassR1B1();
+    int calc_IrBandpassR2B2();
+    int calc_IrBandstopR1B1();
+    int calc_IrBandstopR2B2();
     // --- SUB
     void calc_h();
     void calc_h_fft();
@@ -106,6 +124,13 @@ public:
     virtual int filtrate(double* in, int length, double*& out, int accurancy, bool tails);
     // ---------------- IMPULSE RESPONSE
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
+    bool setIrLowpassR2B2(int N, double fd, double band1, double band2, int window);
+    bool setIrHighpassR1B1(int N, double fd, double band, int window);
+    bool setIrHighpassR2B2(int N, double fd, double band1, double band2, int window);
+    bool setIrBandpassR1B1(int N, double fd, double band1, double band2, int window);
+    bool setIrBandpassR2B2(int N, double fd, double band1, double band2, double band3, double band4, int window);
+    bool setIrBandstopR1B1(int N, double fd, double band1, double band2, int window);
+    bool setIrBandstopR2B2(int N, double fd, double band1, double band2, double band3, double band4, int window);
 
     // ---------------- GET
     int get_fft_size();

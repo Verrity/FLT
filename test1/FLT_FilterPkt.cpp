@@ -253,8 +253,12 @@ void FLT_FilterPkt::filtratePacketBlock(double* packet, double* left_tail, doubl
 bool FLT_FilterPkt::startTransferBlock(int packet_size, unsigned int value)
 {
 	this->value = 1;
-	// Максимально близкое значение БПФ к числу N справа
 	min_fft = 1;
+	this->packet_size = 0;
+
+	if (value < 0)
+		return false;
+	// Максимально близкое значение БПФ к числу N справа
 	while (min_fft < N) {
 		min_fft = min_fft << 1;
 	}
@@ -275,11 +279,11 @@ bool FLT_FilterPkt::startTransferBlock(int packet_size, unsigned int value)
 	add_min = N - 1;
 	add_min2 = add_min / 2;
 	packet_index = 0;
-	//printf("\n\n======= Local Transfer parameters =======\n\n");
-	//printf("add_min = %d\n", add_min);
-	//printf("add_min2 = %d\n", add_min2);
-	//printf("fft_size = %d\n", fft_size);
-	//printf("frame_size = %d\n", frame_size);
+	printf("\n\n======= Local Transfer parameters =======\n\n");
+	printf("add_min = %d\n", add_min);
+	printf("add_min2 = %d\n", add_min2);
+	printf("fft_size = %d\n", fft_size);
+	printf("frame_size = %d\n", frame_size);
 
 	// Освобождается в этом Классе ---------------
 	if (right_tail0	!= nullptr)	delete[] right_tail0;

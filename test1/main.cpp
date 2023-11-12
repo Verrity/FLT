@@ -149,7 +149,7 @@ int main() {
 	int harmonicsCount = 15;
 
 	int packet_count = 5;
-	int packet_length = 13'671;
+	int packet_length = 6'145;
 	int signal_length = packet_length * packet_count;
 
 	//printf("\n-------- Creating arrays             --------\n");
@@ -179,7 +179,8 @@ int main() {
 	//printf("\n-------- Setting impulse response    --------\n");
 
 	FLT_FilterPkt filter_pkt;
-	if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
+	//if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
+	if (!filter_pkt.setIrHighpassR2B2(N, fd, 200, 300, window)) {
 		printf("Error in set type: %d", filter_pkt.get_error_code());
 		exit(-1);
 	}
