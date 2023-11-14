@@ -61,19 +61,53 @@ void writeToFile(int number, fftw_complex* arr, int length) {
 
 int main() {
 	setlocale(LC_ALL, "ru");
+
+	//int N = 257;
+	//double fd = 44100;
+	//int accurancy = 1;
+	//int window = 1;
+
+	//int length_in = 30'000;
+	//int basefreq = 30;
+	//int harmonicscount = 15;
+
+	//double* signal_in = generate_pulse(length_in, basefreq, fd, harmonicscount);
+	//writeToFile(5, signal_in, length_in);
+
+	//double b1 = 500;
+
+	//FLT_BaseFilter filter_base;
+	//if (!filter_base.setIrLowpassR1B1(N, fd, b1, window)) {
+	//	printf("error in set type: %d", filter_base.get_error_code());
+	//	exit(-1);
+	//}
+
+	//int ft_size = 0;
+
+	//int length_out = length_in + N - 1;
+	//filter_base.filtrate(signal_in, length_in, 0);
+	////double* signal_out = filter_base.filtrateT(signal_in, length_in, 0);
+
+	//writeToFile(6, signal_in, length_in);
+	////writeToFile(6, signal_out, length_out);
+
+	//delete[] signal_in;
+	////delete[] signal_out;
+
 	// ----------------------------------------------------------------------------------------------------
 	//int N = 257;
 	//double fd = 44100;
 	//int accurancy = 1;
 	//int window = 1;
 	//
-	//int length_in = 30'000;
+	//int length_in = 90'000;
 	//int baseFreq = 30;
 	//int harmonicsCount = 15;
 
 	//double* signal_in = generate_pulse(length_in, baseFreq, fd, harmonicsCount);
+	//writeToFile(5, signal_in, length_in);
 
-	//double B1 = 500;
+	//double B1 = 300;
 
 	////FLT_BaseFilter filter_base;
 	////if (!filter_base.setIrLowpassR1B1(N, fd, B1, window)) {
@@ -108,15 +142,13 @@ int main() {
 	////delete[] ph;
 	////delete[] mag;
 	////delete[] att;
-	//int length_out = 0;
-	//double* signal_out = nullptr;
-	////length_out = filter_base.filtrate(signal_in, length_in, signal_out, accurancy, 0);
-	////length_out = filter_file.filtrate(signal_in, length_in, signal_out, accurancy, 0);
-	//length_out = filter_file.filtrateBlock(signal_in, length_in, signal_out, accurancy, 1);
+	//int length_out = length_in + N - 1;
+	////filter_file.filtrateBlock(signal_in, length_in, 0);
+	//double* signal_out = filter_file.filtrateBlockT(signal_in, length_in, 0);
 
 	//printf("N           | %d\n", filter_file.get_N());
 	//printf("accurancy   | %d\n", accurancy);
-	//printf("sample_size | %d\n", filter_file.get_sample_size());
+	////printf("sample_size | %d\n", filter_file.get_sample_size());
 	//printf("fft_size:   | %d\n", filter_file.get_fft_size());
 	//printf("fd          | %-10.3f kHz\n", fd / 1000);
 	//printf("Window      | %d\n", filter_file.get_window());
@@ -132,11 +164,11 @@ int main() {
 	//printf("Signal OUT\n");
 	//printf("\tLength          | %d\n", length_out);
 
-	//writeToFile(5, signal_in, length_in);
+	////writeToFile(6, signal_in, length_in);
 	//writeToFile(6, signal_out, length_out);
 
-	//delete[] signal_in;
 	//delete[] signal_out;
+	//delete[] signal_in;
 
 	// ----------------------------------------------------------------------------------------------------
 
@@ -179,6 +211,7 @@ int main() {
 	//printf("\n-------- Setting impulse response    --------\n");
 
 	FLT_FilterPkt filter_pkt;
+
 	//if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
 	if (!filter_pkt.setIrHighpassR2B2(N, fd, 200, 300, window)) {
 		printf("Error in set type: %d", filter_pkt.get_error_code());

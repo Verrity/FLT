@@ -276,8 +276,6 @@ bool FLT_FilterPkt::startTransferBlock(int packet_size, unsigned int value)
 
 	frame_size = fft_size - add_min;
 	this->packet_size = packet_size;
-	add_min = N - 1;
-	add_min2 = add_min / 2;
 	packet_index = 0;
 	printf("\n\n======= Local Transfer parameters =======\n\n");
 	printf("add_min = %d\n", add_min);

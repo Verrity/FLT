@@ -51,7 +51,9 @@ protected:
     double fd = 0;
     int fft_size = 0;
     int accurancy = 0;
+    int signal_size = 0;
     int add_min = 0;
+    int add_min2 = 0;
     int error_code = FILTER_ERROR_OK;
     std::vector<double> bands;
     int window = 0;
@@ -116,12 +118,17 @@ protected:
     double calc_phase(double& real_value, double& complex_value);
     //bool init(int N, double fd, int accurancy, int window);
     bool fft_filtrate(Frame& frame);
-private:
-    int filtrate_length = 0;
-    int filtrate_accurancy = 0;
+    /* Инициализировать и рассчитать минимально необходимые для 
+    работы фильтра переменные и массивы
+    (h, h_fft, mul_frames_ftt, fftw plans, frame1, frame2, window)
+    */
+    void init_min(int N, int fd, int fft_size, int frame_size);
+    void free_min();
+    bool isMinAllocated = false;
 
 public:
-    virtual int filtrate(double* in, int length, double*& out, int accurancy, bool tails);
+    bool filtrate(double* const in, int length, int accurancy);
+    double* filtrateT(double* const in, int length, int accurancy);
     // ---------------- IMPULSE RESPONSE
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
     bool setIrLowpassR2B2(int N, double fd, double band1, double band2, int window);

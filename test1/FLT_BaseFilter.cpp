@@ -8,17 +8,15 @@ FLT_BaseFilter::FLT_BaseFilter()
 
 FLT_BaseFilter::~FLT_BaseFilter()
 {
-    if (h != nullptr)               delete[] h;
+    if (isMinAllocated)
+        free_min();
+
     if (h_magnitude != nullptr)     delete[] h_magnitude;
     if (h_phase != nullptr)         delete[] h_phase;
     if (h_attenuation != nullptr)   delete[] h_attenuation;
     if (freq_match != nullptr)      delete[] freq_match;
-    if (w != nullptr)               delete[] w;
     if (conv_frames != nullptr)     delete[] conv_frames;
-    if (h_fft != nullptr)           fftw_free(h_fft);
-    if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
-    fftw_destroy_plan(forward_signal_fft);
-    fftw_destroy_plan(backward_signalF);
+
 }
 
 FLT_BaseFilter::Frame::Frame()
@@ -52,26 +50,57 @@ bool FLT_BaseFilter::fft_filtrate(Frame& frame) {
     return false;
 }
 
-int FLT_BaseFilter::filtrate(double* in, int length, double*& out, int accurancy, bool tails) {
+void FLT_BaseFilter::init_min(int N, int fd, int fft_size, int frame_size)
+{
+    h = new double[fft_size];
+    h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+    mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
+
+    frame1.init(N, frame_size, fft_size);
+    frame2.init(N, frame_size, fft_size);
+
+    forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
+    backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
+
+    if (window) {
+        if (w != nullptr)   delete[] w;
+        w = new double[fft_size];
+        calc_window();
+    }
+    calc_h();
+    calc_h_fft();
+    isMinAllocated = true;
+}
+
+void FLT_BaseFilter::free_min()
+{
+    if (h != nullptr)               delete[] h;                 h = nullptr;
+    if (h_fft != nullptr)           fftw_free(h_fft);           h_fft = nullptr;
+    if (w != nullptr)               fftw_free(h_fft);           h_fft = nullptr;
+    if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);  mul_frames_fft = nullptr;
+    fftw_destroy_plan(forward_signal_fft);
+    fftw_destroy_plan(backward_signalF);
+    isMinAllocated = false;
+}
+
+bool FLT_BaseFilter::filtrate(double* const in, int length, int accurancy) {
     // Check Parameters ---------------------------------------------
     if (length <= 0) {
         error_code = FILTER_ERROR_LENGTH;
-        return 0;
+        return false;
     }
     if (!check_accurancy(accurancy))
-        return 0;
+        return false;
     // --------------------------------------------------------------
 
-    // Calc Parameters ----------------------------------------------
-    if ( // Если массивы под эти параметры не были рассчитаны рассчитать новые
-        (filtrate_length != length) ||
-        (filtrate_accurancy != accurancy)
-        ) 
-    { 
-        filtrate_length = length;
-        filtrate_accurancy = accurancy;
-
+    if (// Если массивы под эти параметры не были рассчитаны рассчитать новые
+        (signal_size != length) ||
+        (this->accurancy != accurancy)
+        )
+    {
+        signal_size = length;
         this->accurancy = accurancy;
+
         add_min = N - 1;
         fft_size = 1;
         while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
@@ -80,66 +109,59 @@ int FLT_BaseFilter::filtrate(double* in, int length, double*& out, int accurancy
         }
         fft_size << accurancy;
 
-        if (h != nullptr)               delete[] h;
-        if (freq_match != nullptr)      delete[] freq_match;
-        if (h_fft != nullptr)           fftw_free(h_fft);
-        if (mul_frames_fft != nullptr)  fftw_free(mul_frames_fft);
-        fftw_destroy_plan(forward_signal_fft);
-        fftw_destroy_plan(backward_signalF);
-
-        h = new double[fft_size];
-        h_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
-        mul_frames_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
-        freq_match = new double[fft_size];
-
-        frame1.init(N, length, fft_size);
-
-        forward_signal_fft = fftw_plan_dft_r2c_1d(fft_size, pFrameData, pFrameDataFFT, FFTW_ESTIMATE);
-        backward_signalF = fftw_plan_dft_c2r_1d(fft_size, mul_frames_fft, pFrameData, FFTW_ESTIMATE);
-
-        if (window) {
-            if (w != nullptr)   delete[] w;
-            w = new double[fft_size];
-            calc_window();
-        }
-        calc_h();
-        calc_h_fft();
+        if (isMinAllocated)
+            free_min();
+        init_min(this->N, this->fd, this->fft_size, length);
     }
-    // --------------------------------------------------------------
 
     frame1.setData(in, 0, length);
     fft_filtrate(frame1);
 
-    std::cout << "frame1.add " << frame1.add << std::endl;
-    std::cout << "frame1.add_min " << frame1.add_min << std::endl;
-    std::cout << "frame1.add_min_left " << frame1.add_min_left << std::endl;
-    std::cout << "frame1.add_other " << frame1.add_other << std::endl;
-    std::cout << "frame1.add_other_left " << frame1.add_other_left << std::endl;
-    std::cout << "frame1.add_other_right " << frame1.add_other_right << std::endl;
-    std::cout << "frame1.data_size " << frame1.data_size << std::endl;
-    std::cout << "fft_size " << fft_size << std::endl;
+    for (int i = 0; i < length; i++)
+        in[i] = frame1.data[add_min2 + i];
+    return true;
+}
 
-    int len = 0;
-    if (tails) {
-        len = length + add_min;
-        out = new double[len];
-        for (int i = 0; i < len; i++)
-        {
-            //out[i] = frame1.data[frame1.add_other_left + i];
-            out[i] = frame1.data[i];
-            //printf("%d) %f\n", i, frame1.data[frame1.add_other_left + i]);
-            //printf("%f\n", frame1.data[frame1.add_other_left + i]);
-        }
+double* FLT_BaseFilter::filtrateT(double* const in, int length, int accurancy) {
+    // Check Parameters ---------------------------------------------
+    if (length <= 0) {
+        error_code = FILTER_ERROR_LENGTH;
+        return nullptr;
     }
-    else {
-        len = length;
-        out = new double[len];
-        for (int i = 0; i < len; i++)
+    if (!check_accurancy(accurancy))
+        return nullptr;
+    // --------------------------------------------------------------
+
+    if (// Если массивы под эти параметры не были рассчитаны рассчитать новые
+        (signal_size != length) ||
+        (this->accurancy != accurancy)
+        )
+    {
+        signal_size = length;
+        this->accurancy = accurancy;
+
+        add_min = N - 1;
+        fft_size = 1;
+        while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
         {
-            out[i] = frame1.data[frame1.add_min_left + i];
+            fft_size = fft_size << 1;
         }
+        fft_size << accurancy;
+
+        if (isMinAllocated)
+            free_min();
+        init_min(this->N, this->fd, this->fft_size, length);
     }
-    return len;
+
+    frame1.setData(in, 0, length);
+    fft_filtrate(frame1);
+
+    int len = length + add_min;
+    double* out = new double[len];
+    for (int i = 0; i < len; i++)
+        out[i] = frame1.data[i];
+
+    return out;
 }
 
 bool FLT_BaseFilter::setIrLowpassR1B1(int N, double fd, double band, int window) {
@@ -153,6 +175,8 @@ bool FLT_BaseFilter::setIrLowpassR1B1(int N, double fd, double band, int window)
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(1);
     bands.at(0) = band;
@@ -176,6 +200,8 @@ bool FLT_BaseFilter::setIrLowpassR2B2(int N, double fd, double band1, double ban
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(2);
     bands.at(0) = band1;
@@ -200,6 +226,8 @@ bool FLT_BaseFilter::setIrHighpassR1B1(int N, double fd, double band, int window
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(1);
     bands.at(0) = band;
@@ -223,6 +251,8 @@ bool FLT_BaseFilter::setIrHighpassR2B2(int N, double fd, double band1, double ba
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(2);
     bands.at(0) = band1;
@@ -247,6 +277,8 @@ bool FLT_BaseFilter::setIrBandpassR1B1(int N, double fd, double band1, double ba
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(2);
     bands.at(0) = band1;
@@ -271,6 +303,8 @@ bool FLT_BaseFilter::setIrBandpassR2B2(int N, double fd, double band1, double ba
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(4);
     bands.at(0) = band1;
@@ -297,6 +331,8 @@ bool FLT_BaseFilter::setIrBandstopR1B1(int N, double fd, double band1, double ba
         return 0;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(2);
     bands.at(0) = band1;
@@ -321,6 +357,8 @@ bool FLT_BaseFilter::setIrBandstopR2B2(int N, double fd, double band1, double ba
         return false;
     this->N = N;
     this->fd = fd;
+    this->add_min = N - 1;
+    this->add_min2 = add_min / 2;
     this->window = window;
     bands.resize(4);
     bands.at(0) = band1;
@@ -852,7 +890,7 @@ bool FLT_BaseFilter::check_fd(double fd)
 }
 
 bool FLT_BaseFilter::check_accurancy(int accurancy) {
-    if (accurancy < 1) {
+    if (accurancy < 0) {
         error_code = FILTER_ERROR_ACCURANCY;
         return false;
     }

@@ -9,7 +9,7 @@ class FLT_FilterPkt :
     public FLT_BaseFilter
 {
 protected:
-
+    using FLT_BaseFilter::filtrate;
 private:
     int value = 1;
     int min_fft = 0;
@@ -17,7 +17,6 @@ private:
     int packet_size = 0;
     int frame_size = 0;
     int packet_index = 0;
-    int add_min2 = 0; //  = add_min / 2;
 
     double* ptrToAllocatedData1 = nullptr;
     double* ptrToAllocatedData2 = nullptr;
