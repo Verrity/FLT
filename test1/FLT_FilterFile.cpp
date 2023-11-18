@@ -11,45 +11,6 @@ FLT_FilterFile::~FLT_FilterFile()
     if (right_tail != nullptr)  delete[] right_tail;
 }
 
-//int FLT_FilterFile::filtrate(double* in, int length, double* &out, bool tails) {
-//    if (length <= 0) {
-//        error_code = FILTER_ERROR_LENGTH;
-//        return 0;
-//    }
-//    
-//    frame1.setData(in, 0, length);
-//    fft_filtrate(frame1);
-//
-//    std::cout << "frame1.add " << frame1.add << std::endl;
-//    std::cout << "frame1.add_min " << frame1.add_min << std::endl;
-//    std::cout << "frame1.add_min_left " << frame1.add_min_left << std::endl;
-//    std::cout << "frame1.add_other " << frame1.add_other << std::endl;
-//    std::cout << "frame1.add_other_left " << frame1.add_other_left << std::endl;
-//    std::cout << "frame1.add_other_right " << frame1.add_other_right << std::endl;
-//    std::cout << "frame1.data_size " << frame1.data_size << std::endl;
-//    std::cout << "fft_size " << fft_size << std::endl;
-//    
-//    int len = 0;
-//    if (tails) {
-//        len = length + add_min;
-//        out = new double[len];
-//        for (int i = 0; i < len; i++)
-//        {
-//            out[i] = frame1.data[frame1.add_other_left + i];
-//            //printf("%f", frame1.data[frame1.add_other_left + i])
-//        }
-//    }
-//    else {
-//        len = length;
-//        out = new double[len];
-//        for (int i = 0; i < len; i++)
-//        {
-//            out[i] = frame1.data[frame1.add_other_left + frame1.add_min_left + i];
-//        }
-//    }
-//    return len;
-//}
-
 bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int accurancy)
 {
     if (    // Если массивы под эти параметры еще не рассчитывались, рассчитать
@@ -87,14 +48,16 @@ bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int accuran
         }
     }
 
-    // Если в длину сигнала укладывается 3 или меньше кадров
-    // Использовать обычную фильтрацию, иначе блочную
-    // 3 - потому что frame_size берётся 3 раза, потом берутся оставшиеся элементы
-    if (length <= N * 45 * 3) {
-        filtrate(signal, length, accurancy);
-    }
-    else {
-        _filtrateBlock(signal, length, nullptr, nullptr);
+    if (signal != nullptr) {
+        // Если в длину сигнала укладывается 3 или меньше кадров
+        // Использовать обычную фильтрацию, иначе блочную
+        // 3 - потому что frame_size берётся 3 раза, потом берутся оставшиеся элементы
+        if (length <= N * 45 * 3) {
+            filtrate(signal, length, accurancy);
+        }
+        else {
+            _filtrateBlock(signal, length, nullptr, nullptr);
+        }
     }
     return true;
 }
@@ -120,38 +83,39 @@ double* FLT_FilterFile::filtrateBlockT(double* const signal, int length, int acc
         left_tail = new double[add_min2];
         right_tail = new double[add_min2];
     }
+    if (signal != nullptr) {
+        // Если в длину сигнала укладывается 3 или меньше кадров
+        // Использовать обычную фильтрацию, иначе блочную
+        // 3 - потому что frame_size берётся 3 раза, потом берутся оставшиеся элементы
+        if (length <= frame_size * 3) {
+            fft_size = 1;
+            while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
+                fft_size = fft_size << 1;
+            fft_size << accurancy;
 
-    // Если в длину сигнала укладывается 3 или меньше кадров
-    // Использовать обычную фильтрацию, иначе блочную
-    // 3 - потому что frame_size берётся 3 раза, потом берутся оставшиеся элементы
-    if (length <= frame_size * 3) {
-        fft_size = 1;
-        while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
-            fft_size = fft_size << 1;
-        fft_size << accurancy;
+            if (isMinAllocated)
+                free_min();
+            init_min(N, fd, fft_size, length);
 
-        if (isMinAllocated)
-            free_min();
-        init_min(N, fd, fft_size, length);
+            return filtrateT(signal, length, accurancy);
+        }
+        else {
+            if (isMinAllocated)
+                free_min();
+            init_min(N, fd, fft_size, frame_size);
 
-        return filtrateT(signal, length, accurancy);
-    }
-    else {
-        if (isMinAllocated)
-            free_min();
-        init_min(N, fd, fft_size, frame_size);
+            double* out = new double[length + add_min];
+            double* ptrToOutBeginWriteSignal = out + add_min2;
+            memcpy(ptrToOutBeginWriteSignal, signal, sizeof(double) * length);
 
-        double* out = new double[length + add_min];
-        double* ptrToOutBeginWriteSignal = out + add_min2;
-        memcpy(ptrToOutBeginWriteSignal, signal, sizeof(double) * length);
+            _filtrateBlock(ptrToOutBeginWriteSignal, length, left_tail, right_tail);
 
-        _filtrateBlock(ptrToOutBeginWriteSignal, length, left_tail, right_tail);
-
-        for (int i = 0; i < add_min2; i++)
-            out[i] = left_tail[i];
-        for (int i = 0; i < add_min2; i++)
-            out[add_min2 + length + i] = right_tail[i];
-        return out;
+            for (int i = 0; i < add_min2; i++)
+                out[i] = left_tail[i];
+            for (int i = 0; i < add_min2; i++)
+                out[add_min2 + length + i] = right_tail[i];
+            return out;
+        }
     }
 }
 

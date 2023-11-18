@@ -39,42 +39,22 @@ void writeToFile(int number, double* arr, int length) {
 	//delete[] chrPath;
 }
 
-void writeToFile(int number, fftw_complex* arr, int length) {
-	string str1 = "C:/Users/Даниил Левин/Documents/MATLAB/test4/graph";
-	string str2 = std::to_string(number);
-	string str3 = "c.txt";
-	string strPath = str1 + str2 + str3;
-	const char* chrPath = strPath.c_str();
-	//printf_s("strPath: %s\n", strPath);
-	fstream file;
-	file.open(chrPath, std::fstream::in | std::fstream::out | std::fstream::trunc);
-	if (!file.is_open()) {
-		printf_s("Error opening file\n");
-		exit(1);
-	}
-	for (int i = 0; i < length; i++) {
-		file << arr[i][0] << ", " << arr[i][1] << std::endl;
-	}
-	file.close();
-	//delete[] chrPath;
-}
-
 int main() {
 	setlocale(LC_ALL, "ru");
 
 	//int N = 257;
 	//double fd = 44100;
 	//int accurancy = 1;
-	//int window = 1;
+	//int window = 0;
 
-	//int length_in = 30'000;
+	//int length_in = 100;
 	//int basefreq = 30;
 	//int harmonicscount = 15;
 
 	//double* signal_in = generate_pulse(length_in, basefreq, fd, harmonicscount);
-	//writeToFile(5, signal_in, length_in);
+	////writeToFile(5, signal_in, length_in);
 
-	//double b1 = 500;
+	//double b1 = 3401;
 
 	//FLT_BaseFilter filter_base;
 	//if (!filter_base.setIrLowpassR1B1(N, fd, b1, window)) {
@@ -85,218 +65,241 @@ int main() {
 	//int ft_size = 0;
 
 	//int length_out = length_in + N - 1;
-	//filter_base.filtrate(signal_in, length_in, 0);
+	//filter_base.filtrate(nullptr, length_in, 0);
 	////double* signal_out = filter_base.filtrateT(signal_in, length_in, 0);
+	//double* parameter = nullptr;
+	//double* parameter2 = nullptr;
+	////double* freq_match = nullptr;
+	//bool symetrical = 1;
+	//int size = 0;
+	//filter_base.get_h_phase(parameter, symetrical);
+	//size = filter_base.get_h_magnitude(parameter2, symetrical);
+	////filter_base.get_freq_match(freq_match, symetrical);
 
-	//writeToFile(6, signal_in, length_in);
+	//writeToFile(5, parameter2, size);
+	//writeToFile(6, parameter, size);
+	////writeToFile(6, signal_in, length_in);
 	////writeToFile(6, signal_out, length_out);
 
+	//delete[] parameter;
+	//delete[] parameter2;
+	////delete[] freq_match;
 	//delete[] signal_in;
 	////delete[] signal_out;
 
 	// ----------------------------------------------------------------------------------------------------
 	//int N = 257;
-	//double fd = 44100;
-	//int accurancy = 1;
-	//int window = 1;
-	//
-	//int length_in = 90'000;
-	//int baseFreq = 30;
-	//int harmonicsCount = 15;
+	int N = 257;
+	double fd = 44100;
+	int accurancy = 1;
+	int window = 1;
+	
+	int length_in = 10'000;
+	int baseFreq = 30;
+	int harmonicsCount = 15;
 
-	//double* signal_in = generate_pulse(length_in, baseFreq, fd, harmonicsCount);
-	//writeToFile(5, signal_in, length_in);
+	double* signal_in = generate_pulse(length_in, baseFreq, fd, harmonicsCount);
+	writeToFile(5, signal_in, length_in);
 
-	//double B1 = 300;
+	double B1 = 500;
 
-	////FLT_BaseFilter filter_base;
-	////if (!filter_base.setIrLowpassR1B1(N, fd, B1, window)) {
-	////	printf("Error in set type: %d", filter_base.get_error_code());
-	////	exit(-1);
-	////}
-	//FLT_FilterFile filter_file;
-	//if (!filter_file.setIrLowpassR1B1(N, fd, B1, window)) {
-	//	printf("Error in set type: %d", filter_file.get_error_code());
+	//FLT_BaseFilter filter_base;
+	//if (!filter_base.setIrLowpassR1B1(N, fd, B1, window)) {
+	//	printf("Error in set type: %d", filter_base.get_error_code());
 	//	exit(-1);
 	//}
 
-	//int ft_size = 0;
+	FLT_FilterFile filter_file;
+	if (!filter_file.setIrBandstopR2B2(N, fd, 250, 300, 1400, 1450, window)) {
+		printf("Error in set type: %d", filter_file.get_error_code());
+		exit(-1);
+	}
 
-	////double* h = nullptr;
-	////filter_file.get_h(h);
-	////writeToFile(1, h, N);
+	int ft_size = 0;
 
-	////double* ph = nullptr;
-	////ft_size = filter_file.get_h_phase(ph, 0);
-	////writeToFile(2, ph, ft_size);
+	//double* h = nullptr;
+	//filter_file.get_h(h);
+	//writeToFile(1, h, N);
 
-	////double* mag = nullptr;
-	////ft_size = filter_file.get_h_magnitude(mag, 0);
-	////writeToFile(3, mag, ft_size);
+	//double* ph = nullptr;
+	//ft_size = filter_file.get_h_phase(ph, 0);
+	//writeToFile(2, ph, ft_size);
 
-	////double* att = nullptr;
-	////ft_size = filter_file.get_h_attenuation(att, 0);
-	////writeToFile(4, att, ft_size);
+	//double* mag = nullptr;
+	//ft_size = filter_file.get_h_magnitude(mag, 0);
+	//writeToFile(3, mag, ft_size);
 
-	////delete[] h;
-	////delete[] ph;
-	////delete[] mag;
-	////delete[] att;
-	//int length_out = length_in + N - 1;
-	////filter_file.filtrateBlock(signal_in, length_in, 0);
-	//double* signal_out = filter_file.filtrateBlockT(signal_in, length_in, 0);
+	//double* att = nullptr;
+	//ft_size = filter_file.get_h_attenuation(att, 0);
+	//writeToFile(4, att, ft_size);
 
-	//printf("N           | %d\n", filter_file.get_N());
-	//printf("accurancy   | %d\n", accurancy);
-	////printf("sample_size | %d\n", filter_file.get_sample_size());
-	//printf("fft_size:   | %d\n", filter_file.get_fft_size());
-	//printf("fd          | %-10.3f kHz\n", fd / 1000);
-	//printf("Window      | %d\n", filter_file.get_window());
+	//delete[] h;
+	//delete[] ph;
+	//delete[] mag;
+	//delete[] att;
+	int length_out = length_in + N - 1;
+	filter_file.filtrateBlock(signal_in, length_in, 0);
+	//double* signal_out = filter_file.filtrateBlock(signal_in, length_in, 0);
 
-	//printf("\n\n");
-	//printf("Signal IN\n");
-	//printf("\tLength          | %d\n", length_in);
-	//printf("\tBase freq       | %d Hz:\n", baseFreq);
-	//printf("\tHarmonics count | %d\n", harmonicsCount);
-	//printf("\tMax frequency   | %d Hz:\n", baseFreq * harmonicsCount * harmonicsCount);
+	printf("N           | %d\n", filter_file.get_N());
+	printf("accurancy   | %d\n", accurancy);
+	//printf("sample_size | %d\n", filter_file.get_sample_size());
+	printf("fft_size:   | %d\n", filter_file.get_fft_size());
+	printf("fd          | %-10.3f kHz\n", fd / 1000);
+	printf("Window      | %d\n", filter_file.get_window());
 
-	//printf("\n");
-	//printf("Signal OUT\n");
-	//printf("\tLength          | %d\n", length_out);
+	printf("\n\n");
+	printf("Signal IN\n");
+	printf("\tLength          | %d\n", length_in);
+	printf("\tBase freq       | %d Hz:\n", baseFreq);
+	printf("\tHarmonics count | %d\n", harmonicsCount);
+	printf("\tMax frequency   | %d Hz:\n", baseFreq * harmonicsCount * harmonicsCount);
 
-	////writeToFile(6, signal_in, length_in);
+	printf("\n");
+	printf("Signal OUT\n");
+	printf("\tLength          | %d\n", length_out);
+
+	//double* magnitude = nullptr;
+	//int size = filter_file.get_h_attenuation(magnitude, 0);
+	//writeToFile(6, magnitude, size);
+
+	writeToFile(6, signal_in, length_in);
 	//writeToFile(6, signal_out, length_out);
 
 	//delete[] signal_out;
-	//delete[] signal_in;
+	delete[] signal_in;
 
 	// ----------------------------------------------------------------------------------------------------
 
-	int N = 257;
-	double fd = 44100;
-	int window = 1;
-	//int B1 = 120 + 120*3 + 120*5 + 120*7 + 120*9;
-	int B1 = 500;
-	int baseFreq = 50;
-	int harmonicsCount = 15;
+	//int N = 257;
+	//double fd = 44100;
+	//int window = 1;
+	////int B1 = 120 + 120*3 + 120*5 + 120*7 + 120*9;
+	//int B1 = 500;
+	//int baseFreq = 50;
+	//int harmonicsCount = 15;
 
-	int packet_count = 5;
-	int packet_length = 6'145;
-	int signal_length = packet_length * packet_count;
+	//int packet_count = 5;
+	//int packet_length = 6'145;
+	//int signal_length = packet_length * packet_count;
 
-	//printf("\n-------- Creating arrays             --------\n");
+	////printf("\n-------- Creating arrays             --------\n");
 
-	double* signal_in = generate_pulse(signal_length, baseFreq, fd, harmonicsCount);
-	double* signal_out = new double[signal_length];
-	double** master_packet = new double* [packet_count];
+	//double* signal_in = generate_pulse(signal_length, baseFreq, fd, harmonicsCount);
+	//double* signal_out = new double[signal_length];
+	//double** master_packet = new double* [packet_count];
 
-	printf("\n\n======= Filter parameters          =======\n\n");
-	printf("N:               %d\n", N);
-	printf("Fd:              %.2f Hz\n", fd);
-	printf("window:          %d\n", window);
-	printf("Band:            %d Hz\n", B1);
+	//printf("\n\n======= Filter parameters          =======\n\n");
+	//printf("N:               %d\n", N);
+	//printf("Fd:              %.2f Hz\n", fd);
+	//printf("window:          %d\n", window);
+	//printf("Band:            %d Hz\n", B1);
 
-	printf("\n\n======= Generate Signal parameters =======\n\n");
-	printf("Signal length:   %d\n", signal_length);
-	printf("Base frequency:  %d Hz\n", baseFreq);
-	printf("Harmonics count: %d\n", harmonicsCount);
-	printf("Max frequency:   %d Hz\n", baseFreq* harmonicsCount * 2);
+	//printf("\n\n======= Generate Signal parameters =======\n\n");
+	//printf("Signal length:   %d\n", signal_length);
+	//printf("Base frequency:  %d Hz\n", baseFreq);
+	//printf("Harmonics count: %d\n", harmonicsCount);
+	//printf("Max frequency:   %d Hz\n", baseFreq* harmonicsCount * 2);
 
-	printf("\n\n======= Signal transfer parameters =======\n\n");
-	printf("Signal length: %d\n", signal_length);
-	printf("Packets count: %d\n", packet_count);
-	printf("Packet length: %d\n", packet_length);
+	//printf("\n\n======= Signal transfer parameters =======\n\n");
+	//printf("Signal length: %d\n", signal_length);
+	//printf("Packets count: %d\n", packet_count);
+	//printf("Packet length: %d\n", packet_length);
 
-	//printf("\n-------- Arrays created              --------\n");
-	//printf("\n-------- Setting impulse response    --------\n");
+	////printf("\n-------- Arrays created              --------\n");
+	////printf("\n-------- Setting impulse response    --------\n");
 
-	FLT_FilterPkt filter_pkt;
+	//FLT_FilterPkt filter_pkt;
 
 	//if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
-	if (!filter_pkt.setIrHighpassR2B2(N, fd, 200, 300, window)) {
-		printf("Error in set type: %d", filter_pkt.get_error_code());
-		exit(-1);
-	}
+	////if (!filter_pkt.setIrHighpassR2B2(N, fd, 200, 300, window)) {
+	//	printf("Error in set type: %d", filter_pkt.get_error_code());
+	//	exit(-1);
+	//}
 
-	//printf("\n-------- Impulse response set        --------\n");
-	//printf("\n-------- Starting transfer           --------\n");
+	////printf("\n-------- Impulse response set        --------\n");
+	////printf("\n-------- Starting transfer           --------\n");
 
-	if (!filter_pkt.startTransferBlock(packet_length, 0))
-	{
-		printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
-		exit(-1);
-	}
+	////if (!filter_pkt.startTransferBlock(packet_length, 0))
+	//if (!filter_pkt.startTransfer(packet_length, 0))
+	//{
+	//	printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
+	//	exit(-1);
+	//}
 
-	//printf("\n-------- Transfer started            --------\n");
-	//printf("\n-------- Creating packets            --------\n");
-	// Создам пакеты
-	int begin = 0;
-	for (int j = 0; j < packet_count; j++)
-	{
-		master_packet[j] = new double[packet_length];
-		for (int i = 0; i < packet_length; i++)
-			master_packet[j][i] = signal_in[begin + i];
-		begin += packet_length;
-	}
-	
-	//printf("\n-------- Packets created             --------\n");
-	//printf("\n--------                             --------\n");
+	////printf("\n-------- Transfer started            --------\n");
+	////printf("\n-------- Creating packets            --------\n");
+	//// Создам пакеты
+	//int begin = 0;
+	//for (int j = 0; j < packet_count; j++)
+	//{
+	//	master_packet[j] = new double[packet_length];
+	//	for (int i = 0; i < packet_length; i++)
+	//		master_packet[j][i] = signal_in[begin + i];
+	//	begin += packet_length;
+	//}
+	//
+	////printf("\n-------- Packets created             --------\n");
+	////printf("\n--------                             --------\n");
 
-	//printf("\n-------- Starting filtration         --------\n");
-	// Получаем пакеты и фильтруем их, записываем
-	begin = 0;
-	double* packet;
-	for (int i = 0; i < packet_count; i++)
-	{
-		packet = master_packet[i];
-		if (!filter_pkt.filtratePktBlock1(packet)) {
-			// Если пакет первый
-			continue;
-		}
-		else {
-			// Если пакет не первый, то записываем на выход
-			for (int i = 0; i < packet_length; i++)
-				signal_out[begin + i] = packet[i];
-			begin += packet_length;
-		}
-	}
+	////printf("\n-------- Starting filtration         --------\n");
+	//// Получаем пакеты и фильтруем их, записываем
+	//begin = 0;
+	//double* packet;
+	//for (int i = 0; i < packet_count; i++)
+	//{
+	//	packet = master_packet[i];
+	//	//if (!filter_pkt.filtratePktBlock1(packet)) {
+	//	if (!filter_pkt.filtratePkt1(packet)){
+	//		// Если пакет первый
+	//		continue;
+	//	}
+	//	else {
+	//		// Если пакет не первый, то записываем на выход
+	//		for (int i = 0; i < packet_length; i++)
+	//			signal_out[begin + i] = packet[i];
+	//		begin += packet_length;
+	//	}
+	//}
 
-	//printf("\n-------- Filtration completed        --------\n");
-	//printf("\n-------- Getting last packet         --------\n");
+	////printf("\n-------- Filtration completed        --------\n");
+	////printf("\n-------- Getting last packet         --------\n");
 
-	// Получаем последний пакет
-	double* lastPacket = nullptr;
-	lastPacket = filter_pkt.getLatestPktBlock1();
-	for (int i = 0; i < packet_length; i++)
-		signal_out[begin + i] = lastPacket[i];
-	
-	//printf("\n-------- Last packet got             --------\n");
-	//printf("\n-------- Stopping transfer           --------\n");
+	//// Получаем последний пакет
+	//double* lastPacket = nullptr;
+	////lastPacket = filter_pkt.getLatestPktBlock1();
+	//lastPacket = filter_pkt.getLatestPkt();
+	//for (int i = 0; i < packet_length; i++)
+	//	signal_out[begin + i] = lastPacket[i];
+	//
+	////printf("\n-------- Last packet got             --------\n");
+	////printf("\n-------- Stopping transfer           --------\n");
 
-	// Останавливаем передачу
-	filter_pkt.stopTransferBlock();
+	//// Останавливаем передачу
+	////filter_pkt.stopTransferBlock();
+	//
 
-	//printf("\n-------- Transfer stopped            --------\n");
+	////printf("\n-------- Transfer stopped            --------\n");
 
-	printf("\n-------- Writting signals to files   --------\n");
-	// записываем массивы в файл
-	writeToFile(5, signal_in, signal_length);
-	writeToFile(6, signal_out, signal_length);
-	printf("\n-------- Signals wrotted             --------\n");
+	//printf("\n-------- Writting signals to files   --------\n");
+	//// записываем массивы в файл
+	//writeToFile(5, signal_in, signal_length);
+	//writeToFile(6, signal_out, signal_length);
+	//printf("\n-------- Signals wrotted             --------\n");
 
-	//printf("\n-------- Starting free               --------\n");
+	////printf("\n-------- Starting free               --------\n");
 
-	// Чистка
-	delete[] lastPacket;
+	//// Чистка
+	//delete[] lastPacket;
 
-	for (int i = 0; i < packet_count; i++)
-		delete[] master_packet[i];
-	delete[] master_packet;
+	//for (int i = 0; i < packet_count; i++)
+	//	delete[] master_packet[i];
+	//delete[] master_packet;
 
-	delete[] signal_in;
-	delete[] signal_out;
+	//delete[] signal_in;
+	//delete[] signal_out;
 
-	//printf("\n-------- Free ended                  --------\n");
+	////printf("\n-------- Free ended                  --------\n");
 
 	return 0;
 }

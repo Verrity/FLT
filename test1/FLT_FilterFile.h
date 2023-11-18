@@ -15,11 +15,13 @@ public:
     /* ‘ильтрует массив поблочно, без хвостов
     * возвращает результат выполнени€
     * accurancy - начальное и рекомендуемое значение 0
+    * put nullptr to signal if you want to init arrays for get_magnitude or other
     */
     bool filtrateBlock(double* const signal, int length, int accurancy);
     /* ‘ильтрует массив поблочно, с хвостами
     * возвращает указытель на массив размером length + N - 1
     * accurancy - начальное и рекомендуемое значение 0
+    * put nullptr to signal if you want to init arrays for get_magnitude or other
     */
     double* filtrateBlockT(double* const signal, int length, int accurancy);
     // ---------------- GET

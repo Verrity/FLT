@@ -61,12 +61,7 @@ protected:
 
     double* h = nullptr;                    // Real: fft_size                   Logical: fft_size
     fftw_complex* h_fft = nullptr;          // Real: fft_size/2 + 1             Logical: fft_size/2 + 1
-    double* h_magnitude = nullptr;          // Real: fft_size                   Logical: fft_size
-    double* h_phase = nullptr;              // Real: fft_size                   Logical: fft_size
-    double* h_attenuation = nullptr;        // Real: fft_size                   Logical: fft_size
-    double* freq_match = nullptr;           // Real: fft_size                   Logical: fft_size
     double* w = nullptr;                    // Real: fft_size                   Logical: fft_size
-    double* conv_frames = nullptr;          // Real: fft_size               Logical: fft_size
     fftw_complex* mul_frames_fft = nullptr; // Real: (fft_size/2 + 1)*2     Logical: fft_size/2 + 1
 
     fftw_plan forward_signal_fft;   // План БПФ
@@ -96,9 +91,6 @@ protected:
     bool check_bands(double band1, double band2, double fd);
     bool check_bands(double band1, double band2, double band3, double band4, double fd);
 
-    bool convolFull(Frame& frame1, Frame& frame2);
-    void convolDifferent(Frame& frame1, Frame& frame2);
-
     // ---------------- CALCULATION
     // --- IR
     int calc_IrLowpassR1B1();
@@ -112,10 +104,9 @@ protected:
     // --- SUB
     void calc_h();
     void calc_h_fft();
-    void calc_h_fft_mag_ph_att();
     void calc_window();
     double calc_magnitude(double& real_value, double& complex_value);
-    double calc_phase(double& real_value, double& complex_value);
+    double calc_phase(double& real_value, double complex_value);
     //bool init(int N, double fd, int accurancy, int window);
     bool fft_filtrate(Frame& frame);
     /* Инициализировать и рассчитать минимально необходимые для 
@@ -127,7 +118,9 @@ protected:
     bool isMinAllocated = false;
 
 public:
+    // put nullptr to signal if you want to init arrays for get_magnitude or other
     bool filtrate(double* const in, int length, int accurancy);
+    // put nullptr to signal if you want to init arrays for get_magnitude or other
     double* filtrateT(double* const in, int length, int accurancy);
     // ---------------- IMPULSE RESPONSE
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
