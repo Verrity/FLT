@@ -33,7 +33,7 @@ bool FLT_FilterPkt::startTransfer(int packet_length, int accurancy)
 	return true;
 }
 
-bool FLT_FilterPkt::filtratePkt1(double* packet)
+bool FLT_FilterPkt::filtratePkt(double* packet)
 {
 	packet_index++;
 	// Если пакет первый
@@ -86,29 +86,46 @@ bool FLT_FilterPkt::stopTransfer()
 
 bool FLT_FilterPkt::startTransferBlock(int packet_size, int accurancy)
 {
-	this->accurancy = 1;
+	this->accurancy = 0;
 	min_fft = 1;
 	this->packet_size = 0;
 
-	if (accurancy < 0)
+	if (!check_accurancy(accurancy))
 		return false;
-	// Максимально близкое значение БПФ к числу N справа
-	while (min_fft < N) {
-		min_fft = min_fft << 1;
+
+	frame_size = N;
+	fft_size = 1;
+	while (fft_size < (frame_size + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
+	{
+		fft_size = fft_size << 1;
 	}
-	if (accurancy > 0)
-		this->accurancy = accurancy;
-	// Определяем размер БПФ
-	fft_size = min_fft << this->accurancy;
+	fft_size << accurancy;
+	frame_size = fft_size - N + 1;
+
 	add_min = N - 1;
 	add_min2 = add_min / 2;
 
-	if ((packet_size / 4) < (fft_size - add_min)){ // Если длина меньше, чем 4 кадра
-		error_code = FILTER_ERROR_VALUE;
+	if ((packet_size / 4) < (frame_size)) { // Если длина меньше, чем 4 кадра
+		error_code = FILTER_ERROR_ACCURANCY;
 		return false;
 	}
 
-	frame_size = fft_size - add_min;
+	//---// Максимально близкое значение БПФ к числу N справа
+	//---while (min_fft < N) {
+	//---	min_fft = min_fft << 1;
+	//---}
+
+	//---this->accurancy = accurancy;
+	//---// Определяем размер БПФ
+	//---fft_size = min_fft << accurancy;
+	//---add_min = N - 1;
+	//---add_min2 = add_min / 2;
+
+	//---if ((packet_size / 4) < (fft_size - add_min)){ // Если длина меньше, чем 4 кадра
+	//---	error_code = FILTER_ERROR_ACCURANCY;
+	//---	return false;
+	//---}
+	//---frame_size = fft_size - add_min;
 	this->packet_size = packet_size;
 	packet_index = 0;
 	printf("\n\n======= Local Transfer parameters =======\n\n");
@@ -217,5 +234,95 @@ bool FLT_FilterPkt::stopTransferBlock()
 	packet1 = nullptr;
 	packet2 = nullptr;
 	return true;
+}
+
+int FLT_FilterPkt::measureAttenuation(double*& pointer, int packet_size, int accurancy, double f_low, double step, double f_high, unsigned long &time_ns)
+{
+	// Проверки границ частоты
+	if ((f_low <= 0) || (step < f_low) || (f_high <= step) || (f_high > fd / 2)) {
+		error_code = FILTER_ERROR_BAND;
+		return 0;
+	}
+	if (!check_accurancy(accurancy))
+		return 0;
+
+	double AM_f_low = f_low;
+	double AM_f_high = f_high;
+	double AM_step = step;
+	int AM_len = (AM_f_high - AM_f_low) / AM_step + 1;
+
+	frame_size = N;
+	fft_size = 1;
+	while (fft_size < (frame_size + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
+	{
+		fft_size = fft_size << 1;
+	}
+	fft_size << accurancy;
+	frame_size = fft_size - N + 1;
+
+	if ((packet_size / 4) < (fft_size - add_min)) { // Если длина меньше, чем 4 кадра
+		error_code = FILTER_ERROR_ACCURANCY;
+		return 0;
+	}
+
+	if (isMinAllocated)
+		free_min();
+	init_min(this->N, this->fd, this->fft_size, 0);
+
+	double* signal = new double[fft_size];
+	pointer = new double[AM_len];
+	fftw_complex* signalFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+	fftw_complex* signalFiltratedFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
+	// Расчет планов БПФ
+	fftw_plan forward_h = fftw_plan_dft_r2c_1d(fft_size, signal, signalFFT, FFTW_ESTIMATE);
+	fftw_plan backward_signalF = fftw_plan_dft_c2r_1d(fft_size, signalFiltratedFFT, signal, FFTW_ESTIMATE);
+
+	double averageOUT = 0;
+	double averageIN = 0.774'596'669'241; // Опорное значение 0 db [0.775 Вольт]
+	double sum = 0;
+	double H = 0;
+	int iterator = 0;
+
+	for (double f = AM_f_low; f <= AM_f_high; f += AM_step) {
+		averageOUT = 0;
+		sum = 0;
+		// Создать синус для частоты f
+		for (int j = 0; j < fft_size; j++)
+			signal[j] = averageIN * sqrt(2) * sin(2 * FILTER_PI * j * f / fd);
+		// БПФ
+		if (f == AM_f_low)
+			startTimer();
+		fftw_execute_dft_r2c(forward_h, signal, signalFFT);
+		// Умнодить БПФ сигнала и БПФ Имп. хар-ки. (фильтрация)
+		for (int i = 0; i < fft_size / 2 + 1; i++) {
+			double& a = signalFFT[i][0];
+			double& b = signalFFT[i][1];
+			double& c = h_fft[i][0];
+			double& d = h_fft[i][1];
+
+			signalFiltratedFFT[i][0] = ((a * c) - (b * d)) / fft_size;
+			signalFiltratedFFT[i][1] = ((a * d) + (b * c)) / fft_size;
+		}
+		// ОБПФ
+		fftw_execute_dft_c2r(backward_signalF, signalFiltratedFFT, signal);
+		if (f == AM_f_low) {
+			stopTimer();
+			time_ns = m_int_durationTime_ns / fft_size;
+		}
+		// Сумма модулей сигналов
+		for (int j = 0; j < fft_size; j++)
+			sum = sum + std::abs(signal[j]);
+
+		averageOUT = sum / fft_size;            // Среднее значение
+		H = averageOUT / averageIN;             // Коэффициент передачи фильтра
+		pointer[iterator] = 20 * log10(H);      // Затухание в dBu
+		iterator++;
+	}
+	delete[] signal;
+	fftw_free(signalFFT);
+	fftw_free(signalFiltratedFFT);
+	fftw_destroy_plan(forward_h);
+	fftw_destroy_plan(backward_signalF);
+	return AM_len;
 }
 

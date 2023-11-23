@@ -34,8 +34,6 @@ bool FLT_BaseFilter::fft_filtrate(Frame& frame) {
 
         mul_frames_fft[i][0] = ((a * c) - (b * d)) / (fft_size);
         mul_frames_fft[i][1] = ((a * d) + (b * c)) / (fft_size);
-        //printf("%-5d)[%d] %f\n", i, 0, mul_frames_fft[i][0]);
-        //printf("%-5d)[%d] %f\n\n", i, 1, mul_frames_fft[i][1]);
     }
 
     fftw_execute_dft_c2r(backward_signalF, mul_frames_fft, frame.data);
@@ -117,14 +115,14 @@ bool FLT_BaseFilter::filtrate(double* const in, int length, int accurancy) {
     return true;
 }
 
-double* FLT_BaseFilter::filtrateT(double* const in, int length, int accurancy) {
+int FLT_BaseFilter::filtrateT(double* const in, int length, double*& output, int accurancy) {
     // Check Parameters ---------------------------------------------
     if (length <= 0) {
         error_code = FILTER_ERROR_LENGTH;
-        return nullptr;
+        return 0;
     }
     if (!check_accurancy(accurancy))
-        return nullptr;
+        return 0;
     // --------------------------------------------------------------
 
     if (// Если массивы под эти параметры не были рассчитаны рассчитать новые
@@ -143,9 +141,11 @@ double* FLT_BaseFilter::filtrateT(double* const in, int length, int accurancy) {
         }
         fft_size << accurancy;
 
-        if (isMinAllocated)
-            free_min();
-        init_min(this->N, this->fd, this->fft_size, length);
+        if (in != nullptr) {
+            if (isMinAllocated)
+                free_min();
+            init_min(this->N, this->fd, this->fft_size, length);
+        }
     }
 
     if (in != nullptr) {
@@ -153,11 +153,11 @@ double* FLT_BaseFilter::filtrateT(double* const in, int length, int accurancy) {
         fft_filtrate(frame1);
 
         int len = length + add_min;
-        double* out = new double[len];
+        output = new double[len];
         for (int i = 0; i < len; i++)
-            out[i] = frame1.data[i];
+            output[i] = frame1.data[i];
 
-        return out;
+        return len;
     }
 }
 
@@ -370,52 +370,113 @@ bool FLT_BaseFilter::setIrBandstopR2B2(int N, double fd, double band1, double ba
     return true;
 }
 
+int FLT_BaseFilter::measureAttenuation(double*& pointer, int length, int accurancy, double f_low, double step, double f_high, unsigned long &time_ns) 
+{
+    // Проверки границ частоты
+    if ((f_low <= 0) || (step < f_low) || (f_high <= step) || (f_high > fd / 2)) {
+        error_code = FILTER_ERROR_BAND;
+        return 0;
+    }
+    if (!check_accurancy(accurancy))
+        return 0;
+
+    double AM_f_low = f_low;
+    double AM_f_high = f_high;
+    double AM_step = step;
+    int AM_len = (AM_f_high - AM_f_low) / AM_step + 1;
+
+    fft_size = 1;
+    while (fft_size < (length + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
+    {
+        fft_size = fft_size << 1;
+    }
+    fft_size << accurancy;
+
+    if (isMinAllocated)
+        free_min();
+    init_min(this->N, this->fd, this->fft_size, 0);
+
+    double* signal = new double[fft_size];
+    pointer = new double[AM_len];
+    fftw_complex* signalFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+    fftw_complex* signalFiltratedFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
+    // Расчет планов БПФ
+    fftw_plan forward_h = fftw_plan_dft_r2c_1d(fft_size, signal, signalFFT, FFTW_ESTIMATE);
+    fftw_plan backward_signalF = fftw_plan_dft_c2r_1d(fft_size, signalFiltratedFFT, signal, FFTW_ESTIMATE);
+
+    double averageOUT = 0;
+    double averageIN = 0.774'596'669'241; // Опорное значение 0 db [0.775 Вольт]
+    double sum = 0;
+    double H = 0;
+    int iterator = 0;
+
+    for (double f = AM_f_low; f <= AM_f_high; f += AM_step) {
+        averageOUT = 0;
+        sum = 0;
+        // Создать синус для частоты f
+        for (int j = 0; j < fft_size; j++)
+            signal[j] = averageIN * sqrt(2) * sin(2 * FILTER_PI * j * f / fd);
+        // БПФ
+        if (f == AM_f_low)
+            startTimer();
+        fftw_execute_dft_r2c(forward_h, signal, signalFFT);
+        // Умнодить БПФ сигнала и БПФ Имп. хар-ки. (фильтрация)
+        for (int i = 0; i < fft_size / 2 + 1; i++) {
+            double& a = signalFFT[i][0];
+            double& b = signalFFT[i][1];
+            double& c = h_fft[i][0];
+            double& d = h_fft[i][1];
+
+            signalFiltratedFFT[i][0] = ((a * c) - (b * d)) / fft_size;
+            signalFiltratedFFT[i][1] = ((a * d) + (b * c)) / fft_size;
+        }
+        // ОБПФ
+        fftw_execute_dft_c2r(backward_signalF, signalFiltratedFFT, signal);
+        if (f == AM_f_low) {
+            stopTimer();
+            time_ns = m_int_durationTime_ns / fft_size;
+        }
+        // Сумма модулей сигналов
+        for (int j = 0; j < fft_size; j++)
+            sum = sum + std::abs(signal[j]);
+
+        averageOUT = sum / fft_size;            // Среднее значение
+        H = averageOUT / averageIN;             // Коэффициент передачи фильтра
+        pointer[iterator] = 20 * log10(H);      // Затухание в dBu
+        iterator++;
+    }
+    delete[] signal;
+    fftw_free(signalFFT);
+    fftw_free(signalFiltratedFFT);
+    fftw_destroy_plan(forward_h);
+    fftw_destroy_plan(backward_signalF);
+    return AM_len;
+}
+
 void FLT_BaseFilter::Frame::init(int N, int data_size, int fft_size) {
-    this->N = N;
-    this->data_size = data_size;
-    this->fft_size = fft_size;
+    if (data_size > 0){
+        this->N = N;
+        this->data_size = data_size;
+        this->fft_size = fft_size;
 
-    if (data != nullptr)       delete[] data;
-    if (data_fft != nullptr)   fftw_free(data_fft);
+        if (data != nullptr)       delete[] data;
+        if (data_fft != nullptr)   fftw_free(data_fft);
 
-    data = new double[fft_size];
-    data_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
-
-    add = fft_size - data_size;
-    add_min = N - 1;
-    add_min_left = add_min / 2;
-    add_other = fft_size - data_size - add_min;
-    add_other_left = add_other / 2;
-    add_other_right = add_other - add_other_left;
+        data = new double[fft_size];
+        data_fft = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
+    }
 }
 
 void FLT_BaseFilter::Frame::setData(double* arr, int begin, int size)
 {
-    //if (size != this->data_size) {
-    //    if (data != nullptr) {
-    //        delete[] data;
-    //    }
-    //    data = new double[fft_size];
-    //    this->data_size = size;
-    //}
     this->data_size = size;
 
     for (int i = 0; i < fft_size; i++) {
-        if (i < data_size)  // Сигнал
+        if (i < size)  // Сигнал
             data[i] = arr[begin + i];
         else        // Дополнить нулями для БПФ
             data[i] = 0;
     }
-    //printf("Begin %-5d end %-5d size %-5d\n", begin, begin + size - 1, size);
-
-    add_other = fft_size - data_size - (N - 1);
-    add_other_left = add_other / 2;
-    add_other_right = add_other - add_other_left;
-}
-
-void FLT_BaseFilter::Frame::setData(Frame& frame)
-{
-    this->setData(frame.data, 0, frame.data_size);
 }
 
 void FLT_BaseFilter::Frame::switchData(Frame& toFrame, Frame& fromFrame)
@@ -423,7 +484,6 @@ void FLT_BaseFilter::Frame::switchData(Frame& toFrame, Frame& fromFrame)
     double* temp = toFrame.data;
     toFrame.data = fromFrame.data;
     fromFrame.data = temp;
-
 }
 
 int FLT_BaseFilter::calc_IrLowpassR1B1()
@@ -798,6 +858,18 @@ void FLT_BaseFilter::calc_window() {
     }
 }
 
+void FLT_BaseFilter::startTimer()
+{
+    m_startTime = clock_t::now();
+}
+
+void FLT_BaseFilter::stopTimer()
+{
+    m_endTime = clock_t::now();
+    m_durationTime_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(m_endTime - m_startTime);
+    m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // Вычитаем время выполнения кода таймера в "холостую"
+}
+
 bool FLT_BaseFilter::check_N(int N)
 {
     if ((N < 17) || ((N % 2) == 0)) {
@@ -992,6 +1064,7 @@ int FLT_BaseFilter::get_freq_match(double* &freq_match, bool symmetrical)
 
 int FLT_BaseFilter::get_w(double* &w)
 {
+    w = new double[N];
     for (int i = 0; i < N; i++)
         w[i] = this->w[i];
     return N;

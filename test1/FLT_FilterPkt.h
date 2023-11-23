@@ -1,10 +1,8 @@
 #pragma once
 #include "FLT_FilterFile.h"
 
-#define FILTER_FIRST_PKT 123
-#define FILTER_ERROR_VALUE 125
-#define FILTER_ERROR_FFT 12516
-#define FILTER_ERROR_FUNCTION 1597
+#define FILTER_FIRST_PKT -7
+#define FILTER_ERROR_FUNCTION -8
 
 class FLT_FilterPkt :
     public FLT_FilterFile
@@ -26,37 +24,79 @@ private:
 
     using FLT_FilterFile::filtrateBlock;
     using FLT_FilterFile::filtrateBlockT;
+    using FLT_FilterFile::measureAttenuation;
 public:
-    // -----------------------------------------------
-    // use this if you want to init arrays for get_magnitude or other
-    bool startTransfer(int length, int accurancy);
-    // С хвостами, в тот же массив
-    bool filtratePkt1(double* packet);
+    /*Don't splits the signal into blocks. It is used on
+    signals of any size, it is effective in processing
+    small sequences
+    * initializes arrays and calculates the impulse response
+    and starts simple filtering
+    * packet_size - const size of your packet
+    * accurancy - an indicator of how many times the involved size
+    of the fft will differ from the minimum size of the fft
+    make it bigger for more attenuation, reduces the speed, the minimum value is 0
+    * use filtratePkt to filtrate packets
+    */
+    bool startTransfer(int packet_size, int accurancy);
+    /* First packet will be loaded, function return false and error code
+    FILTER_FIRST_PKT, the iteration must be skipped, 
+    * when the next package is loaded, the previous package
+    will be returned, function return true
+    * packet - input & output data
+    use getLatestPkt() to get the latest packet
+    */
+    bool filtratePkt(double* packet);
+    /*Returns pointer to latest packet size of packet_size
+    * use stopTransferBlock to stop stansfer
+    */
     double* getLatestPkt();
+    /* Stops transfer
+    */
     bool stopTransfer();
-    // -----------------------------------------------
+
+    // -------------------------------------------------------------------------
     
-    /*Allocates memory and means ready for use filtratePktBlock*
-    packet_size - size of your packet (const)
-    use this if you want to init arrays for get_magnitude or other
+    /*Splits the signal into blocks and filters. It is used on signals of any 
+    size, it is effective in processing large sequences
+    * initializes arrays and calculates the impulse response
+    and starts block filtering
+    * packet_size - const size of your packet
+    * accurancy - an indicator of how many times the involved size
+    of the fft will differ from the minimum size of the fft
+    make it bigger for more attenuation, reduces the speed, the minimum value is 0
+    * the length of the packet should fit 4 blocks, will return 0
+    and the code FILTER_ERROR_VALUE if this condition is not met, increase accuracy or packet_size.
+    * use filtratePktBlock to filtrate packets
     */
     bool startTransferBlock(int packet_size, int accurancy);
-    /*Puts data in your pointer (slower than filtratePktBlock2)
-    packet - your input and output data
-    returns false, if packet is first (you must skip iteration)
-    returns true, if the packet is intermediate (returns the previous package at the current iteration)
-    [use getLastPktBlock1() to get the latest packet]
+    /* First packet will be loaded, function return false and error code
+    FILTER_FIRST_PKT, the iteration must be skipped
+    * when the next package is loaded, the previous package
+    will be returned, function return true
+    * packet - input & output data
+    use getLastPktBlock1() to get the latest packet
     */
     bool filtratePktBlock(double* const packet);
-    // Возвращает указатель на данные (быстрее, чем filtratePktBlock1)
-    /*Puts data in your pointer
-    returns a pointer to an array of data
-    you free up the memory yourself
+    /*Returns pointer to latest packet size of packet_size
+    * use stopTransferBlock to stop stansfer
     */
-    // Возвращает указатель на массив double
     double* getLatestPktBlock();
-
+    /* Stops transfer
+    */
     bool stopTransferBlock();
+
+    /*Measures attenuation from f_low [Hz] to f_high [Hz] in increments of step in Hz
+    output - put empty pointer for filter attenuation [dBu]
+    * To accurately measure attenuation at low frequencies, reduce the sampling rate.
+    * To accurately measure attenuation at higher frequencies, increase the sampling rate.
+    * output - put empty pointer for measured attenuation
+    * length - the length of your input signal
+    * accurancy - an indicator of how many times the involved size
+    of the fft will differ from the minimum size of the fft
+    make it bigger for more attenuation, reduces the speed, the minimum value is 0
+    returns output length, 0 if error, check error_code
+    */
+    int measureAttenuation(double*& output, int packet_size, int accurancy, double f_low, double step, double f_high, unsigned long &time_ns) override;
 
 };
 
