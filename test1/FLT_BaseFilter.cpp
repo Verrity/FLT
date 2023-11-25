@@ -99,7 +99,8 @@ bool FLT_BaseFilter::filtrate(double* const in, int length, int accurancy) {
         {
             fft_size = fft_size << 1;
         }
-        fft_size << accurancy;
+        
+        fft_size = fft_size << accurancy;
         if (isMinAllocated)
             free_min();
         init_min(this->N, this->fd, this->fft_size, length);
@@ -139,7 +140,7 @@ int FLT_BaseFilter::filtrateT(double* const in, int length, double*& output, int
         {
             fft_size = fft_size << 1;
         }
-        fft_size << accurancy;
+        fft_size = fft_size << accurancy;
 
         if (in != nullptr) {
             if (isMinAllocated)

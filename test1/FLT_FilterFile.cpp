@@ -11,13 +11,17 @@ FLT_FilterFile::~FLT_FilterFile()
     if (right_tail != nullptr)  delete[] right_tail;
 }
 
-bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int accurancy)
+bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int length_parameter, int accurancy)
 {
     if (    // ≈сли массивы под эти параметры еще не рассчитывались, рассчитать
         (signal_size != length) ||
         (this->accurancy != accurancy)
         )
     {
+        if (!check_accurancy(accurancy))
+            return false;
+        if (!check_length_parameter(length_parameter))
+            return false;
         signal_size = length;
         frame_size = N;
         fft_size = 1;
@@ -25,8 +29,9 @@ bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int accuran
         {
             fft_size = fft_size << 1;
         }
-        fft_size << accurancy;
+        fft_size = fft_size << length_parameter;
         frame_size = fft_size - N + 1;
+        fft_size = fft_size << accurancy;
 
         // ≈сли в длину сигнала укладываетс€ 3 или меньше кадров
         // »спользовать обычную фильтрацию, иначе блочную
@@ -62,13 +67,18 @@ bool FLT_FilterFile::filtrateBlock(double* const signal, int length, int accuran
     return true;
 }
 
-int FLT_FilterFile::filtrateBlockT(double* const signal, double*& output, int length, int accurancy)
+int FLT_FilterFile::filtrateBlockT(double* const signal, double*& output, int length, int length_parameter, int accurancy)
 {
     if (    // ≈сли массивы под эти параметры еще не рассчитывались, рассчитать
         (signal_size != length) ||
         (this->accurancy != accurancy)
         )
     {
+        if (!check_accurancy(accurancy))
+            return false;
+        if (!check_length_parameter(length_parameter))
+            return false;
+
         signal_size = length;
         this->accurancy = accurancy;
         //frame_size = N * 45;
@@ -86,8 +96,9 @@ int FLT_FilterFile::filtrateBlockT(double* const signal, double*& output, int le
         {
             fft_size = fft_size << 1;
         }
-        fft_size << accurancy;
+        fft_size = fft_size << length_parameter;
         frame_size = fft_size - N + 1;
+        fft_size = fft_size << accurancy;
 
         left_tail = new double[add_min2];
         right_tail = new double[add_min2];
@@ -132,6 +143,15 @@ int FLT_FilterFile::filtrateBlockT(double* const signal, double*& output, int le
 }
 
 
+
+bool FLT_FilterFile::check_length_parameter(int length_parameter)
+{
+    if (length_parameter < 0) {
+        error_code = FILTER_ERROR_LENGTH_PARAMETER;
+        return false;
+    }
+    return true;
+}
 
 void FLT_FilterFile::_filtrateBlock(double* const signal, int length, double* left_tail, double* right_tail) {
     int frames_count = length % frame_size != 0 ? floor(double(length) / frame_size) + 1 : floor(double(length) / frame_size);
@@ -316,7 +336,7 @@ int FLT_FilterFile::measureAttenuation(double*& pointer, int length, int accuran
     {
         fft_size = fft_size << 1;
     }
-    fft_size << accurancy;
+    fft_size = fft_size << accurancy;
     frame_size = fft_size - N + 1;
 
     if (isMinAllocated)

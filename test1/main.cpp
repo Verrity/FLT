@@ -102,25 +102,25 @@ int main() {
 	//int window = 1;
 	//
 	//int length_in = 131'072;
-	//int baseFreq = 30;
-	//int harmonicsCount = 15;
+	//int baseFreq = 700;
+	//int harmonicsCount = 4;
 
 	//double* signal_in = generate_pulse(length_in, baseFreq, fd, harmonicsCount);
 	//writeToFile(5, signal_in, length_in);
 
-	//double B1 = 500;
-
-	////FLT_BaseFilter filter_base;
-	////if (!filter_base.setIrLowpassR1B1(N, fd, B1, window)) {
-	////	printf("Error in set type: %d", filter_base.get_error_code());
-	////	exit(-1);
-	////}
+	//double B1 = 1401;
 
 	//FLT_FilterFile filter_file;
-	//if (!filter_file.setIrBandstopR2B2(N, fd, 250, 300, 1400, 1450, window)) {
+	//if (!filter_file.setIrLowpassR1B1(N, fd, B1, window)) {
 	//	printf("Error in set type: %d", filter_file.get_error_code());
 	//	exit(-1);
 	//}
+
+	////FLT_FilterFile filter_file;
+	////if (!filter_file.setIrBandstopR2B2(N, fd, 250, 300, 1400, 1450, window)) {
+	////	printf("Error in set type: %d", filter_file.get_error_code());
+	////	exit(-1);
+	////}
 
 	//int ft_size = 0;
 
@@ -209,9 +209,13 @@ int main() {
 	int baseFreq = 700;
 	int harmonicsCount = 4;
 
-	int packet_count = 5;
-	int packet_length = 50'072;
-	int signal_length = packet_length * packet_count;
+	//int packet_count = 8;
+	//int packet_length = 32'768;
+	//int signal_length = packet_length * packet_count;
+
+	int signal_length = 131'072*8;
+	int packet_count = 4;
+	int packet_length = signal_length / packet_count;
 
 	printf("\n-------- Creating arrays             --------\n");
 
@@ -250,7 +254,7 @@ int main() {
 	printf("\n-------- Impulse response set        --------\n");
 	printf("\n-------- Starting transfer           --------\n");
 
-	if (!filter_pkt.startTransferBlock(packet_length, 0))
+	if (!filter_pkt.startTransferBlock(packet_length, 0, 0))
 	//if (!filter_pkt.startTransfer(packet_length, 0))
 	{
 		printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
@@ -325,11 +329,11 @@ int main() {
 
 	printf("\n-------- Transfer stopped            --------\n");
 
-	printf("\n-------- Writting signals to files   --------\n");
-	// записываем массивы в файл
-	writeToFile(5, signal_in, signal_length);
-	writeToFile(6, signal_out, signal_length);
-	printf("\n-------- Signals wrotted             --------\n");
+	//printf("\n-------- Writting signals to files   --------\n");
+	//// записываем массивы в файл
+	//writeToFile(5, signal_in, signal_length);
+	//writeToFile(6, signal_out, signal_length);
+	//printf("\n-------- Signals wrotted             --------\n");
 
 	printf("\n-------- Starting free               --------\n");
 

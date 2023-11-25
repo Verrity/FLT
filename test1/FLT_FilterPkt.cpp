@@ -23,8 +23,9 @@ bool FLT_FilterPkt::startTransfer(int packet_length, int accurancy)
 	{
 		fft_size = fft_size << 1;
 	}
-	fft_size << accurancy;
+
 	frame_size = packet_size;
+	fft_size = fft_size << accurancy;
 
 	if (isMinAllocated)
 		free_min();
@@ -84,13 +85,15 @@ bool FLT_FilterPkt::stopTransfer()
 	return true;
 }
 
-bool FLT_FilterPkt::startTransferBlock(int packet_size, int accurancy)
+bool FLT_FilterPkt::startTransferBlock(int packet_size, int length_parameter, int accurancy)
 {
 	this->accurancy = 0;
 	min_fft = 1;
 	this->packet_size = 0;
 
 	if (!check_accurancy(accurancy))
+		return false;
+	if (!check_length_parameter(length_parameter))
 		return false;
 
 	frame_size = N;
@@ -99,8 +102,10 @@ bool FLT_FilterPkt::startTransferBlock(int packet_size, int accurancy)
 	{
 		fft_size = fft_size << 1;
 	}
-	fft_size << accurancy;
+
+	fft_size = fft_size << length_parameter;
 	frame_size = fft_size - N + 1;
+	fft_size = fft_size << accurancy;
 
 	add_min = N - 1;
 	add_min2 = add_min / 2;

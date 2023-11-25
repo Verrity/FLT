@@ -113,34 +113,31 @@ protected:
     bool isMinAllocated = false;
 
 public:
-    /* Simple filtering using a single fft transformation
-    use this for small signals, preferably equal to length = fft - N + 1
+    /* Simple filtering using a single fft transformation use this for small signals, preferably equal to length = fft - N + 1
     * initializes arrays and calculates the impulse response
     * signal - input & output data
     * length - signal length
-    * accurancy - an indicator of how many times the involved size 
-    of the fft will differ from the minimum size of the fft
-    make it bigger for more attenuation, reduces the speed, the minimum value is 0
+    * accuracy - an increase in the length of the FFT by 2^accuracy relative to the minimum possible FFT
     - put nullptr to signal if you don't want to filtrate, just use get_... functions with arrays
     - put signal if you want to filtrate and use get_... functions with arrays
     returns false if error
     */
     bool filtrate(double* const signal, int length, int accurancy);
-    /* Simple filtering using a single fft transformation
-    use this for small signals, preferably equal to length = fft - N + 1
+
+    /* Simple filtering using a single fft transformation use this for small signals, preferably equal to length = fft - N + 1
     * initializes arrays and calculates the impulse response
     * signal - input data
     * length - signal length
     * output - put empty pointer for output signal with impulse response (tails)
-    * accurancy - an indicator of how many times the involved size
-    of the fft will differ from the minimum size of the fft
-    make it bigger for more attenuation, reduces the speed, the minimum value is 0
+    * accuracy - an increase in the length of the FFT by 2^accuracy relative to the minimum possible FFT
     - put nullptr to signal if you don't want to filtrate, just use get_... functions with arrays
     - put signal if you want to filtrate and use get_... functions with arrays
     returns output signal length, 0 if error 
     */
     int filtrateT(double* const signal, int length, double* &output, int accurancy);
+
     // ---------------- IMPULSE RESPONSE
+
     /*Lowpass, Method: weighting, bands: 1
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -148,6 +145,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
+
     /*Lowpass, Method: decomposition, bands: 2
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -155,6 +153,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrLowpassR2B2(int N, double fd, double band1, double band2, int window);
+
     /*Highpass, Method: weighting, bands: 1
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -162,6 +161,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrHighpassR1B1(int N, double fd, double band, int window);
+
     /*Highpass, Method: decomposition, bands: 2
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -169,6 +169,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrHighpassR2B2(int N, double fd, double band1, double band2, int window);
+
     /*Bandpass, Method: weighting, bands: 2
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -176,6 +177,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrBandpassR1B1(int N, double fd, double band1, double band2, int window);
+
     /*Bandpass, Method: decomposition, bands: 4
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -183,6 +185,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrBandpassR2B2(int N, double fd, double band1, double band2, double band3, double band4, int window);
+
     /*Bandstop, Method: weighting, bands: 2
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -190,6 +193,7 @@ public:
     * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
     */
     bool setIrBandstopR1B1(int N, double fd, double band1, double band2, int window);
+
     /*Bandstop, Method: decomposition, bands: 4
     * N - impulse response length, must be odd, min value 17
     * fd - sampling rate in Hz
@@ -215,11 +219,13 @@ public:
     int get_fft_size();
     int get_N();
     int get_window();
+
     /*h - put empty pointer for output
     returns output length, 0 if error 
     before that, the memory must be initialized, see filtrate functions
     */
     int get_h(double* &h);
+
     /*Get impulse response 
     magnitude - put empty pointer for output
     returns output length, 0 if error
@@ -228,6 +234,7 @@ public:
     before that, the memory must be initialized, see filtrate functions
     */
     int get_h_magnitude(double* &magnitude, bool symmetrical);
+
     /*Get phase of the approximating filter function
     phase - put empty pointer for output
     returns output length, 0 if error
@@ -236,6 +243,7 @@ public:
     before that, the memory must be initialized, see filtrate functions
     */
     int get_h_phase(double* &phase, bool symmetrical);
+
     /*Get attenuation of the approximating filter function
     attenuation - put empty pointer for output
     returns output length, 0 if error
@@ -244,6 +252,7 @@ public:
     before that, the memory must be initialized, see filtrate functions
     */
     int get_h_attenuation(double* &attenuation, bool symmetrical);
+
     /*Get array of frequencies corresponding to the harmonics of the 
     parameters of the approximating filter function
     freq_match - put empty pointer for output
@@ -253,12 +262,14 @@ public:
     before that, the memory must be initialized, see filtrate functions
     */
     int get_freq_match(double* &freq_match, bool symmetrical);
+
     /*Get widow
     freq_match - put empty pointer for output
     returns output length, 0 if error
     before that, the memory must be initialized, see filtrate functions
     */
     int get_w(double* &w);
+
     /*Returns error code*/
     int get_error_code();
 };
