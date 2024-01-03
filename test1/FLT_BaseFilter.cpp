@@ -1,5 +1,4 @@
 #include "FLT_BaseFilter.h"
-#include <iostream>
 
 FLT_BaseFilter::FLT_BaseFilter()
 {
@@ -142,14 +141,14 @@ int FLT_BaseFilter::filtrateT(double* const in, int length, double*& output, int
         }
         fft_size = fft_size << accurancy;
 
-        if (in != nullptr) {
+        if ((in != nullptr) || (output != nullptr)) {
             if (isMinAllocated)
                 free_min();
             init_min(this->N, this->fd, this->fft_size, length);
         }
     }
 
-    if (in != nullptr) {
+    if ((in != nullptr) || (output != nullptr)) {
         frame1.setData(in, 0, length);
         fft_filtrate(frame1);
 
@@ -373,7 +372,7 @@ bool FLT_BaseFilter::setIrBandstopR2B2(int N, double fd, double band1, double ba
 
 int FLT_BaseFilter::measureAttenuation(double*& pointer, int length, int accurancy, double f_low, double step, double f_high, unsigned long &time_ns) 
 {
-    // Проверки границ частоты
+    //   
     if ((f_low <= 0) || (step < f_low) || (f_high <= step) || (f_high > fd / 2)) {
         error_code = FILTER_ERROR_BAND;
         return 0;
@@ -401,12 +400,12 @@ int FLT_BaseFilter::measureAttenuation(double*& pointer, int length, int accuran
     pointer = new double[AM_len];
     fftw_complex* signalFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
     fftw_complex* signalFiltratedFFT = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1) * 2);
-    // Расчет планов БПФ
+    //   
     fftw_plan forward_h = fftw_plan_dft_r2c_1d(fft_size, signal, signalFFT, FFTW_ESTIMATE);
     fftw_plan backward_signalF = fftw_plan_dft_c2r_1d(fft_size, signalFiltratedFFT, signal, FFTW_ESTIMATE);
 
     double averageOUT = 0;
-    double averageIN = 0.774'596'669'241; // Опорное значение 0 db [0.775 Вольт]
+    double averageIN = 0.774596669241; // Опорное значение 0 db [0.775 Вольт]
     double sum = 0;
     double H = 0;
     int iterator = 0;
@@ -414,14 +413,14 @@ int FLT_BaseFilter::measureAttenuation(double*& pointer, int length, int accuran
     for (double f = AM_f_low; f <= AM_f_high; f += AM_step) {
         averageOUT = 0;
         sum = 0;
-        // Создать синус для частоты f
+        //     f
         for (int j = 0; j < fft_size; j++)
             signal[j] = averageIN * sqrt(2) * sin(2 * FILTER_PI * j * f / fd);
-        // БПФ
+        // 
         if (f == AM_f_low)
             startTimer();
         fftw_execute_dft_r2c(forward_h, signal, signalFFT);
-        // Умнодить БПФ сигнала и БПФ Имп. хар-ки. (фильтрация)
+        // Умнодить БПФ сигнала и БПФ Имп. хар-ки. (фильтрация
         for (int i = 0; i < fft_size / 2 + 1; i++) {
             double& a = signalFFT[i][0];
             double& b = signalFFT[i][1];
@@ -490,7 +489,7 @@ void FLT_BaseFilter::Frame::switchData(Frame& toFrame, Frame& fromFrame)
 int FLT_BaseFilter::calc_IrLowpassR1B1()
 {
     double& B1 = bands.at(0);
-    // Рассчитать Имп. хар-ку
+    //  . -
     for (int i = 0; i < fft_size; i++)
         if (i < (N - 1) / 2) {
             h[i] = sin(2 * FILTER_PI * B1 / fd * (i - (N - 1) / 2)) / (FILTER_PI * (i - (N - 1) / 2));
@@ -512,7 +511,7 @@ int FLT_BaseFilter::calc_IrLowpassR2B2()
 {
     double& border_pass = bands.at(0);
     double& border_stop = bands.at(1);
-    // Рассчитать Имп. хар-ку
+    //  . -
     double numenator1 = 0, numenator2 = 0, denominator = 0;
     for (int i = 0; i < fft_size; i++)
         if (i < (N - 1) / 2) {
@@ -736,7 +735,7 @@ void FLT_BaseFilter::calc_h()
                 break;
             }
             break;
-        case 2: 
+        case 2:
             switch (bands_count) // Количество полос частот
             {
             case 2: // Две полосы
@@ -868,7 +867,7 @@ void FLT_BaseFilter::stopTimer()
 {
     m_endTime = clock_t::now();
     m_durationTime_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(m_endTime - m_startTime);
-    m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // Вычитаем время выполнения кода таймера в "холостую"
+    m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; //       ""
 }
 
 bool FLT_BaseFilter::check_N(int N)
@@ -999,7 +998,6 @@ int FLT_BaseFilter::get_h_phase(double* &phase, bool symmetrical)
         for (int i = 0; i < fft_short; i++)
             phase[i] = calc_phase(h_fft[i][0], h_fft[i][1]);
 
-        // Всегда правая симметричная часть фазы будет с минусом для фильтров с точно линейной ФЧХ (1[как этот] и 2 вида)
         for (int i = 0; i < fft_short - 2; i++)                 
             phase[fft_short + i] = calc_phase(h_fft[fft_short - 2 - i][0], -h_fft[fft_short - 2 - i][1]);
 
@@ -1065,10 +1063,14 @@ int FLT_BaseFilter::get_freq_match(double* &freq_match, bool symmetrical)
 
 int FLT_BaseFilter::get_w(double* &w)
 {
-    w = new double[N];
-    for (int i = 0; i < N; i++)
-        w[i] = this->w[i];
-    return N;
+    if (!window) {
+        error_code = FILTER_ERROR_WINDOW;
+        return 0;
+    }
+        w = new double[N];
+        for (int i = 0; i < N; i++)
+            w[i] = this->w[i];
+        return N;
 }
 
 int FLT_BaseFilter::get_error_code()

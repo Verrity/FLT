@@ -29,7 +29,7 @@ void writeToFile(int number, double* arr, int length) {
 	fstream file;
 	file.open(chrPath, std::fstream::in | std::fstream::out | std::fstream::trunc);
 	if (!file.is_open()) {
-		printf_s("Error opening file\n");
+		printf("Error opening file\n");
 		exit(1);
 	}
 	for (int i = 0; i < length; i++) {
@@ -101,7 +101,7 @@ int main() {
 	//int accurancy = 1;
 	//int window = 1;
 	//
-	//int length_in = 131'072;
+	//int length_in = 131072;
 	//int baseFreq = 700;
 	//int harmonicsCount = 4;
 
@@ -144,11 +144,11 @@ int main() {
 	////delete[] ph;
 	////delete[] mag;
 	////delete[] att;
-	//using clock_t = std::chrono::high_resolution_clock; // Для таймера
-	//std::chrono::time_point<clock_t> m_startTime;   // Время начала
-	//std::chrono::time_point<clock_t> m_endTime;     // Время конца
-	//std::chrono::nanoseconds m_durationTime_ns;     // Для времени
-	//unsigned long int m_int_durationTime_ns = 0;    // Время [нс]
+	//using clock_t = std::chrono::high_resolution_clock; // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//std::chrono::time_point<clock_t> m_startTime;   // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	//std::chrono::time_point<clock_t> m_endTime;     // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	//std::chrono::nanoseconds m_durationTime_ns;     // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//unsigned long int m_int_durationTime_ns = 0;    // пїЅпїЅпїЅпїЅпїЅ [пїЅпїЅ]
 	//m_startTime = clock_t::now();
 
 	//int length_out = length_in + N - 1;
@@ -159,7 +159,7 @@ int main() {
 
 	//m_endTime = clock_t::now();
 	//m_durationTime_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(m_endTime - m_startTime);
-	//m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // Вычитаем время выполнения кода таймера в "холостую"
+	//m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
 	//printf("General time: %f\n", m_int_durationTime_ns / double(length_in));
 
 	////double* signal_out = filter_file.filtrateBlock(signal_in, length_in, 0);
@@ -210,10 +210,10 @@ int main() {
 	int harmonicsCount = 4;
 
 	//int packet_count = 8;
-	//int packet_length = 32'768;
+	//int packet_length = 32768;
 	//int signal_length = packet_length * packet_count;
 
-	int signal_length = 131'072*8;
+	int signal_length = 131072*8;
 	int packet_count = 4;
 	int packet_length = signal_length / packet_count;
 
@@ -263,7 +263,7 @@ int main() {
 
 	printf("\n-------- Transfer started            --------\n");
 	printf("\n-------- Creating packets            --------\n");
-	// Создам пакеты
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	int begin = 0;
 	for (int j = 0; j < packet_count; j++)
 	{
@@ -277,15 +277,15 @@ int main() {
 	//printf("\n--------                             --------\n");
 
 	printf("\n-------- Starting filtration         --------\n");
-	// Получаем пакеты и фильтруем их, записываем
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	begin = 0;
 	double* packet;
 
-	using clock_t = std::chrono::high_resolution_clock; // Для таймера
-	std::chrono::time_point<clock_t> m_startTime;   // Время начала
-	std::chrono::time_point<clock_t> m_endTime;     // Время конца
-	std::chrono::nanoseconds m_durationTime_ns;     // Для времени
-	unsigned long int m_int_durationTime_ns = 0;    // Время [нс]
+	using clock_t = std::chrono::high_resolution_clock; // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	std::chrono::time_point<clock_t> m_startTime;   // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	std::chrono::time_point<clock_t> m_endTime;     // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	std::chrono::nanoseconds m_durationTime_ns;     // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	unsigned long int m_int_durationTime_ns = 0;    // пїЅпїЅпїЅпїЅпїЅ [пїЅпїЅ]
 	m_startTime = clock_t::now();
 
 	for (int i = 0; i < packet_count; i++)
@@ -293,11 +293,11 @@ int main() {
 		packet = master_packet[i];
 		if (!filter_pkt.filtratePktBlock(packet)) {
 		//if (!filter_pkt.filtratePkt(packet)){
-			// Если пакет первый
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			continue;
 		}
 		else {
-			// Если пакет не первый, то записываем на выход
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 			for (int i = 0; i < packet_length; i++)
 				signal_out[begin + i] = packet[i];
 			begin += packet_length;
@@ -307,7 +307,7 @@ int main() {
 	printf("\n-------- Filtration completed        --------\n");
 	printf("\n-------- Getting last packet         --------\n");
 
-	// Получаем последний пакет
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	double* lastPacket = nullptr;
 	lastPacket = filter_pkt.getLatestPktBlock();
 	//lastPacket = filter_pkt.getLatestPkt();
@@ -316,13 +316,13 @@ int main() {
 	
 	m_endTime = clock_t::now();
 	m_durationTime_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(m_endTime - m_startTime);
-	m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // Вычитаем время выполнения кода таймера в "холостую"
+	m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
 	printf("General time: %f\n", m_int_durationTime_ns / double(signal_length));
 
 	printf("\n-------- Last packet got             --------\n");
 	printf("\n-------- Stopping transfer           --------\n");
 
-	//Останавливаем передачу
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	//filter_pkt.stopTransfer();
 	filter_pkt.stopTransferBlock();
 	
@@ -330,14 +330,14 @@ int main() {
 	printf("\n-------- Transfer stopped            --------\n");
 
 	//printf("\n-------- Writting signals to files   --------\n");
-	//// записываем массивы в файл
+	//// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 	//writeToFile(5, signal_in, signal_length);
 	//writeToFile(6, signal_out, signal_length);
 	//printf("\n-------- Signals wrotted             --------\n");
 
 	printf("\n-------- Starting free               --------\n");
 
-	// Чистка
+	// пїЅпїЅпїЅпїЅпїЅпїЅ
 	delete[] lastPacket;
 
 	for (int i = 0; i < packet_count; i++)
@@ -352,7 +352,7 @@ int main() {
 	return 0;
 }
 
-// Прошлый packet filter (самый первый, простой) ----------------------------------------------
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ packet filter (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ) ----------------------------------------------
 //int N = 257;
 //double fd = 44100;
 //int accurancy = 1;

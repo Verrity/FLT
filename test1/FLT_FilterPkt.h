@@ -1,8 +1,8 @@
 #pragma once
 #include "FLT_FilterFile.h"
 
-#define FILTER_FIRST_PKT -8
-#define FILTER_ERROR_FUNCTION -9
+#define FILTER_FIRST_PKT -8         // First packet
+#define FILTER_ERROR_FUNCTION -9    // The function is called in the incorrect sequence of actions
 
 class FLT_FilterPkt :
     public FLT_FilterFile

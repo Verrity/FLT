@@ -53,11 +53,4 @@ public:
     
     // ---------------- GET
     int get_frame_size();
-private:
-    int filtrateBlock_length = 0;
-    int filtrateBlock_accurancy = 0;
-
-    //bool local_init(int N, double fd, int accurancy, int window);
-    //bool fft_filtrate(Frame& frame);
-
 };

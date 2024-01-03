@@ -2,6 +2,8 @@
 #include "fftw3.h"
 #include <math.h>
 #include <vector>
+#include <cstring>
+#include <iostream>
 #include <chrono>
 
 #define FILTER_PI 3.1415926535897932384626433832795
@@ -19,6 +21,8 @@ class FLT_BaseFilter
 public:
     FLT_BaseFilter();
     ~FLT_BaseFilter();
+private:
+    FLT_BaseFilter(const FLT_BaseFilter& other) = delete;
 protected:
     struct Frame
     {
@@ -57,7 +61,7 @@ protected:
     fftw_complex* h_fft = nullptr;          // Real: fft_size/2 + 1             Logical: fft_size/2 + 1
     double* w = nullptr;                    // Real: fft_size                   Logical: fft_size
     fftw_complex* mul_frames_fft = nullptr; // Real: (fft_size/2 + 1)*2     Logical: fft_size/2 + 1
-
+    
     fftw_plan forward_signal_fft;   // План БПФ
     fftw_plan backward_signalF;     // План ОБПФ
     double* pFrameData = nullptr;
@@ -104,7 +108,7 @@ protected:
 
     // ---------------- Filtration and initialisation
     bool fft_filtrate(Frame& frame);
-    /* Инициализировать и рассчитать минимально необходимые для 
+    /* Инициализировать и рассчитать минимально необходимые для
     работы фильтра переменные и массивы
     (h, h_fft, mul_frames_ftt, fftw plans, frame1, frame2, w)
     */

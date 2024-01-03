@@ -38,7 +38,7 @@ bool FLT_FilterPkt::filtratePkt(double* packet)
 {
 	packet_index++;
 	// Если пакет первый
-	switch (packet_index){
+	switch (packet_index) {
 	case 1:
 		frame1.setData(packet, 0, packet_size);
 		fft_filtrate(frame1);
@@ -49,16 +49,16 @@ bool FLT_FilterPkt::filtratePkt(double* packet)
 		frame2.setData(packet, 0, packet_size);
 		fft_filtrate(frame2);
 
-		for (int i = 0; i < frame_size - add_min2; i++){
+		for (int i = 0; i < frame_size - add_min2; i++) {
 			packet[i] = frame1.data[add_min2 + i];
 		}
-		for (int i = 0; i < add_min2; i++){
+		for (int i = 0; i < add_min2; i++) {
 			packet[frame_size - add_min2 + i] = frame1.data[frame_size + i] + frame2.data[i];
 		}
 		return true;
 		Frame::switchData(frame1, frame2);
 		break;
-	}	
+	}
 }
 
 double* FLT_FilterPkt::getLatestPkt()
@@ -140,17 +140,17 @@ bool FLT_FilterPkt::startTransferBlock(int packet_size, int length_parameter, in
 	printf("frame_size = %d\n", frame_size);
 
 	// Освобождается в этом Классе ---------------
-	if (right_tail0	!= nullptr)	delete[] right_tail0;
-	if (left_tail	!= nullptr)	delete[] left_tail;
-	if (right_tail	!= nullptr)	delete[] right_tail;
-	if (ptrToAllocatedData1	!= nullptr)	delete[] ptrToAllocatedData1;
-	if (ptrToAllocatedData2	!= nullptr)	delete[] ptrToAllocatedData2;
+	if (right_tail0 != nullptr)	delete[] right_tail0;
+	if (left_tail != nullptr)	delete[] left_tail;
+	if (right_tail != nullptr)	delete[] right_tail;
+	if (ptrToAllocatedData1 != nullptr)	delete[] ptrToAllocatedData1;
+	if (ptrToAllocatedData2 != nullptr)	delete[] ptrToAllocatedData2;
 
-	right_tail0	= new double[add_min2];
-	left_tail	= new double[add_min2];
-	right_tail	= new double[add_min2];
-	ptrToAllocatedData1	= new double[packet_size];
-	ptrToAllocatedData2	= new double[packet_size];
+	right_tail0 = new double[add_min2];
+	left_tail = new double[add_min2];
+	right_tail = new double[add_min2];
+	ptrToAllocatedData1 = new double[packet_size];
+	ptrToAllocatedData2 = new double[packet_size];
 	// ------------------------------------------
 
 	// Освобождается в родительском классе ------
@@ -191,7 +191,7 @@ bool FLT_FilterPkt::filtratePktBlock(double* const packet)
 		}
 
 		memcpy(packet, packet1, sizeof(double) * packet_size);
-		
+
 		double* temp0 = packet1;
 		packet1 = packet2;
 		packet2 = temp0;
@@ -226,14 +226,14 @@ bool FLT_FilterPkt::stopTransferBlock()
 
 	accurancy = 1;
 	min_fft = 1;
-	packet_size	= 0;
+	packet_size = 0;
 	frame_size = 0;
 	packet_index = 0;
 	add_min2 = 0;
 
-	if (right_tail0	!= nullptr)			delete[] right_tail0;			right_tail0	= nullptr;
-	if (left_tail	!= nullptr)			delete[] left_tail;				left_tail	= nullptr;
-	if (right_tail	!= nullptr)			delete[] right_tail;			right_tail	= nullptr;
+	if (right_tail0 != nullptr)			delete[] right_tail0;			right_tail0 = nullptr;
+	if (left_tail != nullptr)			delete[] left_tail;				left_tail = nullptr;
+	if (right_tail != nullptr)			delete[] right_tail;			right_tail = nullptr;
 	if (ptrToAllocatedData1 != nullptr)	delete[] ptrToAllocatedData1;	ptrToAllocatedData1 = nullptr;
 	if (ptrToAllocatedData2 != nullptr)	delete[] ptrToAllocatedData2;	ptrToAllocatedData2 = nullptr;
 	packet1 = nullptr;
@@ -241,7 +241,7 @@ bool FLT_FilterPkt::stopTransferBlock()
 	return true;
 }
 
-int FLT_FilterPkt::measureAttenuation(double*& pointer, int packet_size, int accurancy, double f_low, double step, double f_high, unsigned long &time_ns)
+int FLT_FilterPkt::measureAttenuation(double*& pointer, int packet_size, int accurancy, double f_low, double step, double f_high, unsigned long& time_ns)
 {
 	// Проверки границ частоты
 	if ((f_low <= 0) || (step < f_low) || (f_high <= step) || (f_high > fd / 2)) {
@@ -283,7 +283,7 @@ int FLT_FilterPkt::measureAttenuation(double*& pointer, int packet_size, int acc
 	fftw_plan backward_signalF = fftw_plan_dft_c2r_1d(fft_size, signalFiltratedFFT, signal, FFTW_ESTIMATE);
 
 	double averageOUT = 0;
-	double averageIN = 0.774'596'669'241; // Опорное значение 0 db [0.775 Вольт]
+	double averageIN = 0.774596669241; // Опорное значение 0 db [0.775 Вольт]
 	double sum = 0;
 	double H = 0;
 	int iterator = 0;

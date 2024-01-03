@@ -352,7 +352,7 @@ int FLT_FilterFile::measureAttenuation(double*& pointer, int length, int accuran
     fftw_plan backward_signalF = fftw_plan_dft_c2r_1d(fft_size, signalFiltratedFFT, signal, FFTW_ESTIMATE);
 
     double averageOUT = 0;
-    double averageIN = 0.774'596'669'241; // Опорное значение 0 db [0.775 Вольт]
+    double averageIN = 0.774596669241; // Опорное значение 0 db [0.775 Вольт]
     double sum = 0;
     double H = 0;
     int iterator = 0;
