@@ -87,18 +87,11 @@ protected:
     // --- BANDS
     bool check_bands(double band, double fd);
     bool check_bands(double band1, double band2, double fd);
-    bool check_bands(double band1, double band2, double band3, double band4, double fd);
 
     // ---------------- CALCULATION
     // --- IR
     int calc_IrLowpassR1B1();
-    int calc_IrLowpassR2B2();
-    int calc_IrHighpassR1B1();
-    int calc_IrHighpassR2B2();
-    int calc_IrBandpassR1B1();
-    int calc_IrBandpassR2B2();
-    int calc_IrBandstopR1B1();
-    int calc_IrBandstopR2B2();
+
     // --- SUB
     void calc_h();
     void calc_h_fft();
