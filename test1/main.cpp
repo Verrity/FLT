@@ -65,8 +65,10 @@ int main() {
 	//int ft_size = 0;
 
 	//int length_out = length_in + N - 1;
-	//filter_base.filtrate(nullptr, length_in, 0);
+	////filter_base.filtrate(nullptr, length_in, 0);
 	////double* signal_out = filter_base.filtrateT(signal_in, length_in, 0);
+	//filter_base.filtrate(signal_in, length_in, 0);
+	//filter_base.filtrate(signal_in, length_in, 0);
 	//double* parameter = nullptr;
 	//double* parameter2 = nullptr;
 	////double* freq_match = nullptr;
@@ -78,15 +80,15 @@ int main() {
 
 	//double* mAttenuation = nullptr;
 	//unsigned long time = 0;
-	//int mSize = filter_base.measureAttenuation(mAttenuation, length_in, 1, 1, 1, fd / 2 - 1, time);
+	////int mSize = filter_base.measureAttenuation(mAttenuation, length_in, 1, 1, 1, fd / 2 - 1, time);
 
-	//writeToFile(5, mAttenuation, mSize);
+	////writeToFile(5, mAttenuation, mSize);
 	////writeToFile(6, parameter, size);
 	////writeToFile(6, parameter2, size);
 	////writeToFile(6, signal_in, length_in);
 	////writeToFile(6, signal_out, length_out);
 
-	//delete[] mAttenuation;
+	////delete[] mAttenuation;
 
 	////delete[] parameter;
 	////delete[] parameter2;
@@ -151,8 +153,10 @@ int main() {
 	//unsigned long int m_int_durationTime_ns = 0;    // ����� [��]
 	//m_startTime = clock_t::now();
 
+	//writeToFile(5, signal_in, length_in);
+
 	//int length_out = length_in + N - 1;
-	//if (!filter_file.filtrateBlock(signal_in, length_in, 0)) {
+	//if (!filter_file.filtrateBlock(signal_in, length_in, 0, 0)) {
 	//	printf("Error code: %d", filter_file.get_error_code());
 	//	exit(-1);
 	//}
@@ -162,6 +166,12 @@ int main() {
 	//m_int_durationTime_ns = m_durationTime_ns.count() /*- m_minimum_execution_time_timer_code*/; // �������� ����� ���������� ���� ������� � "��������"
 	//printf("General time: %f\n", m_int_durationTime_ns / double(length_in));
 
+	//if (!filter_file.filtrateBlock(signal_in, length_in, 0, 0)) {
+	//	printf("Error code: %d", filter_file.get_error_code());
+	//	exit(-1);
+	//}
+
+	//writeToFile(6, signal_in, length_in);
 	////double* signal_out = filter_file.filtrateBlock(signal_in, length_in, 0);
 
 	//printf("N           | %d\n", filter_file.get_N());
@@ -192,7 +202,7 @@ int main() {
 	////printf("Time: %lu ns\n", time);
 
 	////writeToFile(5, mAttenuation, mSize);
-	////writeToFile(6, signal_in, length_in);
+	////writeToFile(5, signal_in, length_in);
 	////writeToFile(6, signal_out, length_out);
 
 	////delete[] signal_out;
@@ -298,9 +308,9 @@ int main() {
 		}
 		else {
 			// ���� ����� �� ������, �� ���������� �� �����
-			for (int i = 0; i < packet_length; i++)
-				signal_out[begin + i] = packet[i];
-			begin += packet_length;
+			//for (int i = 0; i < packet_length; i++)
+			//	signal_out[begin + i] = packet[i];
+			//begin += packet_length;
 		}
 	}
 
@@ -311,8 +321,8 @@ int main() {
 	double* lastPacket = nullptr;
 	lastPacket = filter_pkt.getLatestPktBlock();
 	//lastPacket = filter_pkt.getLatestPkt();
-	for (int i = 0; i < packet_length; i++)
-		signal_out[begin + i] = lastPacket[i];
+	//for (int i = 0; i < packet_length; i++)
+		//signal_out[begin + i] = lastPacket[i];
 	
 	m_endTime = clock_t::now();
 	m_durationTime_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(m_endTime - m_startTime);
@@ -336,6 +346,38 @@ int main() {
 	//printf("\n-------- Signals wrotted             --------\n");
 
 	printf("\n-------- Starting free               --------\n");
+
+	delete[] lastPacket;
+
+	if (!filter_pkt.startTransferBlock(packet_length, 0, 0)){
+		printf("Error in start transfer, error code: %d", filter_pkt.get_error_code());
+		exit(-1);
+	}
+
+	begin = 0;
+	for (int i = 0; i < packet_count; i++)
+	{
+		packet = master_packet[i];
+		if (!filter_pkt.filtratePktBlock(packet)) {
+			continue;
+		}
+		else {
+			for (int i = 0; i < packet_length; i++)
+				signal_out[begin + i] = packet[i];
+			begin += packet_length;
+		}
+	}
+
+	lastPacket = filter_pkt.getLatestPktBlock();
+	for (int i = 0; i < packet_length; i++)
+		signal_out[begin + i] = lastPacket[i];
+
+	filter_pkt.stopTransferBlock();
+
+	printf("\n-------- Writting signals to files   --------\n");
+	writeToFile(5, signal_in, signal_length);
+	writeToFile(6, signal_out, signal_length);
+	printf("\n-------- Signals wrotted             --------\n");
 
 	// ������
 	delete[] lastPacket;

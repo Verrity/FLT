@@ -76,12 +76,20 @@ double* FLT_FilterPkt::getLatestPkt()
 
 bool FLT_FilterPkt::stopTransfer()
 {
+	if (packet_index == 0) {
+		error_code = FILTER_ERROR_FUNCTION;
+		return false;
+	}
+
 	accurancy = 1;
 	min_fft = 1;
 	packet_size = 0;
 	frame_size = 0;
 	packet_index = 0;
 	add_min2 = 0;
+
+	if (isMinAllocated)
+		free_min();
 	return true;
 }
 
@@ -115,29 +123,8 @@ bool FLT_FilterPkt::startTransferBlock(int packet_size, int length_parameter, in
 		return false;
 	}
 
-	//---// Максимально близкое значение БПФ к числу N справа
-	//---while (min_fft < N) {
-	//---	min_fft = min_fft << 1;
-	//---}
-
-	//---this->accurancy = accurancy;
-	//---// Определяем размер БПФ
-	//---fft_size = min_fft << accurancy;
-	//---add_min = N - 1;
-	//---add_min2 = add_min / 2;
-
-	//---if ((packet_size / 4) < (fft_size - add_min)){ // Если длина меньше, чем 4 кадра
-	//---	error_code = FILTER_ERROR_ACCURANCY;
-	//---	return false;
-	//---}
-	//---frame_size = fft_size - add_min;
 	this->packet_size = packet_size;
 	packet_index = 0;
-	printf("\n\n======= Local Transfer parameters =======\n\n");
-	printf("add_min = %d\n", add_min);
-	printf("add_min2 = %d\n", add_min2);
-	printf("fft_size = %d\n", fft_size);
-	printf("frame_size = %d\n", frame_size);
 
 	// Освобождается в этом Классе ---------------
 	if (right_tail0 != nullptr)	delete[] right_tail0;
@@ -238,6 +225,9 @@ bool FLT_FilterPkt::stopTransferBlock()
 	if (ptrToAllocatedData2 != nullptr)	delete[] ptrToAllocatedData2;	ptrToAllocatedData2 = nullptr;
 	packet1 = nullptr;
 	packet2 = nullptr;
+
+	if (isMinAllocated)
+		free_min();
 	return true;
 }
 
