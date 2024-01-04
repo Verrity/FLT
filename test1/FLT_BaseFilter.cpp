@@ -430,15 +430,6 @@ bool FLT_BaseFilter::check_bands(double band, double fd)
     return true;
 }
 
-bool FLT_BaseFilter::check_bands(double band1, double band2, double fd)
-{
-    if ((band1 < 0) || (band1 > band2) || (band2 > fd/2)) {
-        error_code = FILTER_ERROR_BAND;
-        return false;
-    }
-    return true;
-}
-
 double FLT_BaseFilter::calc_magnitude(double& real_value, double& complex_value) {
     return sqrt(pow(real_value, 2) + pow(complex_value, 2));
 }

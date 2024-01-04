@@ -86,7 +86,6 @@ protected:
     bool check_window(int window);
     // --- BANDS
     bool check_bands(double band, double fd);
-    bool check_bands(double band1, double band2, double fd);
 
     // ---------------- CALCULATION
     // --- IR
