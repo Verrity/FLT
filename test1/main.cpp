@@ -255,7 +255,7 @@ int main() {
 
 	FLT_FilterPkt filter_pkt;
 
-	if (!filter_pkt.setIrLowpassR1B1(N, fd, B1, window)) {
+	if (!filter_pkt.setIrBandstopR2B2(N, fd, B1, B1 + 400, B1*2, B1*3 + 400, window)) {
 	//if (!filter_pkt.setIrHighpassR2B2(N, fd, 200, 300, window)) {
 		printf("Error in set type: %d", filter_pkt.get_error_code());
 		exit(-1);
