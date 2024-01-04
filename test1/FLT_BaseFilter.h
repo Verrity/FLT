@@ -142,62 +142,6 @@ public:
     */
     bool setIrLowpassR1B1(int N, double fd, double band, int window);
 
-    /*Lowpass, Method: decomposition, bands: 2
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrLowpassR2B2(int N, double fd, double band1, double band2, int window);
-
-    /*Highpass, Method: weighting, bands: 1
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrHighpassR1B1(int N, double fd, double band, int window);
-
-    /*Highpass, Method: decomposition, bands: 2
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrHighpassR2B2(int N, double fd, double band1, double band2, int window);
-
-    /*Bandpass, Method: weighting, bands: 2
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrBandpassR1B1(int N, double fd, double band1, double band2, int window);
-
-    /*Bandpass, Method: decomposition, bands: 4
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrBandpassR2B2(int N, double fd, double band1, double band2, double band3, double band4, int window);
-
-    /*Bandstop, Method: weighting, bands: 2
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrBandstopR1B1(int N, double fd, double band1, double band2, int window);
-
-    /*Bandstop, Method: decomposition, bands: 4
-    * N - impulse response length, must be odd, min value 17
-    * fd - sampling rate in Hz
-    * band - band in Hz
-    * window - window type (0 - none, 1 - Hamming, 2 - Blackman, 3 - Hann)
-    */
-    bool setIrBandstopR2B2(int N, double fd, double band1, double band2, double band3, double band4, int window);
-
     /*Measures attenuation from f_low [Hz] to f_high [Hz] in increments of step in Hz
     output - put empty pointer for filter attenuation [dBu]
     * To accurately measure attenuation at low frequencies, reduce the sampling rate.
