@@ -81,14 +81,6 @@ int FLT_FilterFile::filtrateBlockT(double* const signal, double*& output, int le
 
         signal_size = length;
         this->accurancy = accurancy;
-        //frame_size = N * 45;
-        //fft_size = 1;
-        //while (fft_size < (frame_size + add_min)) // fft_size < (длина сигнала + минимум добавочных элементов)
-        //{
-        //    fft_size = fft_size << 1;
-        //}
-        //fft_size << accurancy - 1;
-        //frame_size = fft_size - N + 1;
 
         frame_size = N;
         fft_size = 1;
